@@ -81,7 +81,7 @@ beta_0=0.75 # U->H: 0.75 | H->U: 1
 beta_1=0.75 # U->H: 0.75 | H->U: 0.75
 beta_2=0.5 # U->H: 0.5 | H->U: 0.5
 
-use_attn=TransAttn # none | TransAttn | general
+use_attn=none # none | TransAttn | general
 n_attn=1
 use_attn_frame=none # none | TransAttn | general
 
@@ -93,8 +93,8 @@ ens_DA=MCD # none | MCD
 mu=4.0
 
 # parameters for architectures
-bS=200 # batch size
-bS_2=200
+bS=128 # batch size
+bS_2=128
 #$((bS * num_target / num_source ))
 echo '('$bS', '$bS_2')'
 
@@ -153,7 +153,7 @@ then
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame \
 	--gd $gd --lr $lr --lr_decay $lr_decay --lr_adaptive $lr_adaptive --lr_steps $lr_steps_1 $lr_steps_2 --epochs $epochs --optimizer $optimizer \
 	--n_rnn 1 --rnn_cell LSTM --n_directions 1 --n_ts 5 \
-	-b $bS $bS_2 91 -j 4 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
+	-b $bS $bS_2 128 -j 4 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
 
 fi
 

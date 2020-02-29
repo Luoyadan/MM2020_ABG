@@ -330,7 +330,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 	top1 = AverageMeter()
 	top5 = AverageMeter()
 
-	criterion_edge = torch.nn.MSELoss().cuda()
+	criterion_edge = torch.nn.MSELoss(reduction='sum').cuda()
 
 	if args.no_partialbn:
 		model.module.partialBN(False)
@@ -595,9 +595,10 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 			loss += gamma * loss_entropy
 
 		# 4. edge loss
-		loss_edge = criterion_edge(source_to_target_edge[-1], high_order_edge_map) * 4.0
-		losses_edge.update(loss_edge.item(), out_source.size(0))
-		loss += loss_edge
+		if args.ens_high_order_loss:
+			loss_edge = criterion_edge(source_to_target_edge[-1], high_order_edge_map) * 10.0
+			losses_edge.update(loss_edge.item(), out_source.size(0))
+			loss += loss_edge
 
 		# measure accuracy and record loss
 		pred = out
@@ -644,7 +645,8 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 			if args.ens_DA != 'none' and args.use_target != 'none':
 				line += 'mu {mu:.6f}  loss_s {loss_s.avg:.4f}\t'
 
-			line += 'loss_edge {loss_edge.avg:.4f}\t'
+			if args.ens_high_order_loss:
+				line += 'loss_edge {loss_edge.avg:.4f}\t'
 
 			line = line.format(
 				epoch, i, len(source_loader), batch_time=batch_time, data_time=data_time, alpha=alpha, beta=beta, gamma=gamma, mu=mu,
