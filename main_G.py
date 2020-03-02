@@ -596,7 +596,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 		# 4. edge loss
 		if args.ens_high_order_loss:
-			loss_edge = criterion_edge(source_to_target_edge[-1], high_order_edge_map) * 10.0
+			loss_edge = criterion_edge(source_to_target_edge[-1], high_order_edge_map.detach()) * 10.0
 			losses_edge.update(loss_edge.item(), out_source.size(0))
 			loss += loss_edge
 

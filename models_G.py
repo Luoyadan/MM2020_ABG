@@ -303,7 +303,7 @@ class VideoModel(nn.Module):
                               self.feature_dim) if self.add_fc > 0 and self.fc_dim > 0 else self.feature_dim
         feat_frame_dim = feat_shared_dim
 
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.LeakyReLU(inplace=True)
         self.dropout_i = nn.Dropout(p=self.dropout_rate_i)
         self.dropout_v = nn.Dropout(p=self.dropout_rate_v)
 
@@ -424,7 +424,7 @@ class VideoModel(nn.Module):
 
             self.conv_fusion = nn.Sequential(
                 nn.Conv2d(2, 1, kernel_size=(1, 1), padding=(0, 0)),
-                nn.ReLU(inplace=True),
+                nn.LeakyRELU(inplace=True),
             )
 
         # ------ video-level layers (source layers + domain layers) ------#
@@ -479,7 +479,7 @@ class VideoModel(nn.Module):
             for i in range(self.train_segments - 1):
                 relation_domain_classifier = nn.Sequential(
                     nn.Linear(feat_aggregated_dim, feat_video_dim),
-                    nn.ReLU(),
+                    nn.LeakyRELU(),
                     nn.Linear(feat_video_dim, 2)
                 )
                 self.relation_domain_classifier_all += [relation_domain_classifier]
