@@ -1013,7 +1013,7 @@ class VideoModel(nn.Module):
                 padded_source_edge[:source_edge_frame.size()[1], :source_edge_frame.size()[1]] = source_edge_frame
                 source_edge_frame = padded_source_edge.cuda()
             high_order_edge_map = F.normalize(source_edge_frame, dim=1, p=1).mm(source_to_target_edge[-1]).mm(F.normalize(target_edge_frame, dim=0, p=1))
-            
+
         # elif self.baseline_type == 'video':
         #     if source_edge_video.size()[1] < source_to_target_edge[-1].size()[0]:
         #         padded_source_edge = torch.zeros((source_to_target_edge[-1].size()[0], source_to_target_edge[-1].size()[0]))
