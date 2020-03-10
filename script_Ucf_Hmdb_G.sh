@@ -85,7 +85,7 @@ use_attn=none # none | TransAttn | general
 n_attn=0
 use_attn_frame=none # none | TransAttn | general
 
-use_bn=none # none | AdaBN | AutoDIAL
+use_bn=AdaBN # none | AdaBN | AutoDIAL
 add_loss_DA=none # none | target_entropy | attentive_entropy
 gamma=0.003 # U->H: 0.003 | H->U: 0.3
 

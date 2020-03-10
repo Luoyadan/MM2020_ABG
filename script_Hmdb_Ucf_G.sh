@@ -77,7 +77,7 @@ alpha=0 # depend on users
 
 adv_pos_0=N # Y | N (discriminator for relation features)
 adv_DA=RevGrad # none | RevGrad
-beta_0=0.75 # U->H: 0.75 | H->U: 1
+beta_0=1 # U->H: 0.75 | H->U: 1
 beta_1=0.75 # U->H: 0.75 | H->U: 0.75
 beta_2=0.5 # U->H: 0.5 | H->U: 0.5
 

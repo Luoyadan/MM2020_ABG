@@ -24,7 +24,7 @@ from colorama import Fore, Back, Style
 import numpy as np
 from tensorboardX import SummaryWriter
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2"
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1"
 np.random.seed(1)
 torch.manual_seed(1)
 torch.cuda.manual_seed_all(1)

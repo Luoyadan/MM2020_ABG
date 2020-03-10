@@ -49,7 +49,7 @@ def main():
 
 	print(Fore.GREEN + 'Baseline:', args.baseline_type)
 	print(Fore.GREEN + 'Frame aggregation method:', args.frame_aggregation)
-
+	print(Fore.GREEN + 'Number of Experts: ', args.num_experts)
 	print(Fore.GREEN + 'target data usage:', args.use_target)
 	if args.use_target == 'none':
 		print(Fore.GREEN + 'no Domain Adaptation')
@@ -88,7 +88,7 @@ def main():
 				add_fc=args.add_fc, fc_dim = args.fc_dim,
 				dropout_i=args.dropout_i, dropout_v=args.dropout_v, partial_bn=not args.no_partialbn,
 				use_bn=args.use_bn if args.use_target != 'none' else 'none', ens_DA=args.ens_DA if args.use_target != 'none' else 'none',
-				n_rnn=args.n_rnn, rnn_cell=args.rnn_cell, n_directions=args.n_directions, n_ts=args.n_ts,
+				n_experts=args.num_experts, n_rnn=args.n_rnn, rnn_cell=args.rnn_cell, n_directions=args.n_directions, n_ts=args.n_ts,
 				use_attn=args.use_attn, n_attn=args.n_attn, use_attn_frame=args.use_attn_frame,
 				verbose=args.verbose, share_params=args.share_params)
 
@@ -405,34 +405,35 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 		label_target = target_label_frame if args.baseline_type == 'frame' else target_label
 
 		#====== pre-train source data ======#
-		if args.pretrain_source:
-			#------ forward pass data again ------#
-			_, out_source, out_source_2, _, _, _, _, _, _, _ = model(source_data, target_data, source_label, beta, mu,
-																	 is_train=True, reverse=False)
-
-			# ignore dummy tensors
-			out_source = out_source[:batch_source_ori]
-			out_source_2 = out_source_2[:batch_source_ori]
-
-			#------ calculate the loss function ------#
-			# 1. calculate the classification loss
-			out = out_source
-			label = label_source
-
-			loss = criterion(out, label)
-			if args.ens_DA == 'MCD' and args.use_target != 'none':
-				loss += criterion(out_source_2, label)
-
-			# compute gradient and do SGD step
-			optimizer.zero_grad()
-			loss.backward()
-
-			if args.clip_gradient is not None:
-				total_norm = clip_grad_norm_(model.parameters(), args.clip_gradient)
-				if total_norm > args.clip_gradient and args.verbose:
-					print("clipping gradient: {} with coef {}".format(total_norm, args.clip_gradient / total_norm))
-
-			optimizer.step()
+		# if args.pretrain_source:
+		# 	#------ forward pass data again ------#
+		# 	_, out_source, out_source_2, _, _, _, _, _, _, _ = model(source_data, target_data, source_label, beta, mu,
+		# 															 is_train=True, reverse=False)
+		#
+		# 	# ignore dummy tensors
+		# 	out_source = out_source[:batch_source_ori]
+		# 	out_source_2 = out_source_2[:batch_source_ori]
+		#
+		# 	#------ calculate the loss function ------#
+		# 	# 1. calculate the classification loss
+		# 	out = out_source
+		# 	label = label_source
+		#
+		# 	loss = criterion(out, label)
+		# 	if args.ens_DA == 'MCD' and args.use_target != 'none':
+		# 		for i in range(args.num_experts):
+		# 			loss += criterion(out_source_2[i], label)
+		#
+		# 	# compute gradient and do SGD step
+		# 	optimizer.zero_grad()
+		# 	loss.backward()
+		#
+		# 	if args.clip_gradient is not None:
+		# 		total_norm = clip_grad_norm_(model.parameters(), args.clip_gradient)
+		# 		if total_norm > args.clip_gradient and args.verbose:
+		# 			print("clipping gradient: {} with coef {}".format(total_norm, args.clip_gradient / total_norm))
+		#
+		# 	optimizer.step()
 
 
 		#====== forward pass data ======#
@@ -482,7 +483,8 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 		loss_classification = criterion(out, label)
 		if args.ens_DA == 'MCD' and args.use_target != 'none':
-			loss_classification += criterion(out_source_2, label)
+			for expert in range(args.num_experts):
+				loss_classification += criterion(out_source_2[expert], label)
 
 		losses_c.update(loss_classification.item(), out_source.size(0)) # pytorch 0.4.X
 		loss = loss_classification
@@ -587,10 +589,10 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 			# ignore dummy tensors
 			# _, out_target, out_target_2, _, _ = removeDummy(attn_target, out_target, out_target_2, pred_domain_target, feat_target, batch_target_ori)
-
-			loss_dis = -dis_MCD(out_target, out_target_2)
-			losses_s.update(loss_dis.item(), out_target.size(0))
-			loss += loss_dis
+			for expert in range(args.num_experts):
+				loss_dis = -dis_MCD(out_target, out_target_2[expert])
+				losses_s.update(loss_dis.item(), out_target.size(0))
+				loss += loss_dis
 
 		# 3. attentive entropy loss
 		if args.add_loss_DA == 'attentive_entropy' and args.use_attn != 'none' and args.use_target != 'none':
@@ -875,7 +877,7 @@ def accuracy(output, target, topk=(1,)):
 def removeDummy(attn, out_1, out_2, pred_domain, feat, batch_size):
 	attn = attn[:batch_size]
 	out_1 = out_1[:batch_size]
-	out_2 = out_2[:batch_size]
+	out_2 = [out[:batch_size] for out in out_2]
 	pred_domain = [pred[:batch_size] for pred in pred_domain]
 	feat = [f[:batch_size] for f in feat]
 

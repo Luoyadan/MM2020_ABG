@@ -233,7 +233,7 @@ class VideoModel(nn.Module):
                  before_softmax=True,
                  dropout_i=0.5, dropout_v=0.5, use_bn='none', ens_DA='none',
                  crop_num=1, partial_bn=True, verbose=True, add_fc=1, fc_dim=1024,
-                 n_rnn=1, rnn_cell='LSTM', n_directions=1, n_ts=5,
+                 n_experts=1, n_rnn=1, rnn_cell='LSTM', n_directions=1, n_ts=5,
                  use_attn='TransAttn', n_attn=1, use_attn_frame='none',
                  share_params='Y'):
         super(VideoModel, self).__init__()
@@ -252,6 +252,9 @@ class VideoModel(nn.Module):
         self.add_fc = add_fc
         self.fc_dim = fc_dim
         self.share_params = share_params
+
+        #MOE
+        self.num_experts = n_experts
 
         # RNN
         self.n_layers = n_rnn
@@ -376,10 +379,10 @@ class VideoModel(nn.Module):
 
         # BN for the above layers
         if self.use_bn != 'none':  # S & T: use AdaBN (ICLRW 2017) approach
-            self.bn_shared_S = nn.BatchNorm1d(feat_shared_dim)  # BN for the shared layers
-            self.bn_shared_T = nn.BatchNorm1d(feat_shared_dim)
-            self.bn_source_S = nn.BatchNorm1d(feat_frame_dim)  # BN for the source feature layers
-            self.bn_source_T = nn.BatchNorm1d(feat_frame_dim)
+            self.bn_shared_S = nn.BatchNorm1d(self.feature_dim)  # BN for the shared layers
+            self.bn_shared_T = nn.BatchNorm1d(self.feature_dim)
+            self.bn_source_S = nn.BatchNorm1d(self.feature_dim)  # BN for the source feature layers
+            self.bn_source_T = nn.BatchNorm1d(self.feature_dim)
 
         # ------ aggregate frame-based features (frame feature --> video feature) ------#
         if self.frame_aggregation == 'rnn':  # 2. rnn
@@ -424,7 +427,7 @@ class VideoModel(nn.Module):
 
             self.conv_fusion = nn.Sequential(
                 nn.Conv2d(2, 1, kernel_size=(1, 1), padding=(0, 0)),
-                nn.LeakyRELU(inplace=True),
+                nn.LeakyReLU(inplace=True),
             )
 
         # ------ video-level layers (source layers + domain layers) ------#
@@ -464,10 +467,15 @@ class VideoModel(nn.Module):
         constant_(self.label_embedding.bias, 0)
 
         if self.ens_DA == 'MCD':
-            self.fc_classifier_video_source_2 = nn.Linear(feat_video_dim,
-                                                          num_class)  # second classifier for self-ensembling
-            normal_(self.fc_classifier_video_source_2.weight, 0, std)
-            constant_(self.fc_classifier_video_source_2.bias, 0)
+            for i in range(self.num_experts):
+                fc_classifier_video_source_2 = nn.Linear(feat_video_dim,
+                                                              num_class)  # second classifier for self-ensembling
+                normal_(fc_classifier_video_source_2.weight, 0, std)
+                constant_(fc_classifier_video_source_2.bias, 0)
+                self.add_module('fc_classifier_video_source_2_{}'.format(i), fc_classifier_video_source_2)
+
+
+
 
         self.fc_classifier_domain_video = nn.Linear(feat_video_dim, 2)
         normal_(self.fc_classifier_domain_video.weight, 0, std)
@@ -479,7 +487,7 @@ class VideoModel(nn.Module):
             for i in range(self.train_segments - 1):
                 relation_domain_classifier = nn.Sequential(
                     nn.Linear(feat_aggregated_dim, feat_video_dim),
-                    nn.LeakyRELU(),
+                    nn.LeakyReLU(),
                     nn.Linear(feat_video_dim, 2)
                 )
                 self.relation_domain_classifier_all += [relation_domain_classifier]
@@ -787,22 +795,22 @@ class VideoModel(nn.Module):
         # feat_fc_source = self.fc_feature_shared_source(feat_base_source)
         # feat_fc_target = self.fc_feature_shared_target(
         #     feat_base_target) if self.share_params == 'N' else self.fc_feature_shared_source(feat_base_target)
-        #
+
         # # adaptive BN
-        # if self.use_bn != 'none':
-        #     feat_fc_source, feat_fc_target = self.domainAlign(feat_fc_source, feat_fc_target, is_train, 'shared',
-        #                                                       self.alpha.item(), num_segments, 1)
-        #
+        if self.use_bn != 'none':
+            feat_fc_source, feat_fc_target = self.domainAlign(feat_base_source, feat_base_target, is_train, 'shared',
+                                                              self.alpha.item(), num_segments, 1)
+
         # feat_fc_source = self.relu(feat_fc_source)
         # feat_fc_target = self.relu(feat_fc_target)
         # feat_fc_source = self.dropout_i(feat_fc_source)
         # feat_fc_target = self.dropout_i(feat_fc_target)
-        #
-        # # feat_fc = self.dropout_i(feat_fc)
-        # feat_all_source.append(feat_fc_source.view(
-        #     (batch_source, num_segments) + feat_fc_source.size()[-1:]))  # reshape ==> 1st dim is the batch size
-        # feat_all_target.append(feat_fc_target.view((batch_target, num_segments) + feat_fc_target.size()[-1:]))
-        #
+
+        # feat_fc = self.dropout_i(feat_fc)
+        feat_all_source.append(feat_fc_source.view(
+            (batch_source, num_segments) + feat_fc_source.size()[-1:]))  # reshape ==> 1st dim is the batch size
+        feat_all_target.append(feat_fc_target.view((batch_target, num_segments) + feat_fc_target.size()[-1:]))
+
         # if self.add_fc > 1:
         #     feat_fc_source = self.fc_feature_shared_2_source(feat_fc_source)
         #     feat_fc_target = self.fc_feature_shared_2_target(
@@ -833,7 +841,7 @@ class VideoModel(nn.Module):
 
         # === GNN layers (frame-level) ===#
         if self.baseline_type == 'frame' or 'video':
-            source_to_target_edge, node_source_list, node_target_list = self.GNN_frame(feat_base_source, feat_base_target)
+            source_to_target_edge, node_source_list, node_target_list = self.GNN_frame(feat_fc_source, feat_fc_target)
             feat_fc_source = node_source_list[-1]
             feat_fc_target = node_target_list[-1]
 
@@ -918,21 +926,21 @@ class VideoModel(nn.Module):
         #     feat_fc_video_source_3_1 = self.tcl_3_1(feat_fc_video_source)
         #     feat_fc_video_target_3_1 = self.tcl_3_1(feat_fc_video_target)
         #
-        #     if self.use_bn != 'none':
-        #         feat_fc_video_source_3_1, feat_fc_video_target_3_1 = self.domainAlign(feat_fc_video_source_3_1,
-        #                                                                               feat_fc_video_target_3_1,
-        #                                                                               is_train, 'temconv_1',
-        #                                                                               self.alpha.item(), num_segments,
-        #                                                                               1)
-        #
-        #     feat_fc_video_source = self.relu(feat_fc_video_source_3_1)  # 16 x 1 x 5 x 512
-        #     feat_fc_video_target = self.relu(feat_fc_video_target_3_1)  # 16 x 1 x 5 x 512
-        #
-        #     feat_fc_video_source = nn.AvgPool2d(kernel_size=(num_segments, 1))(feat_fc_video_source)  # 16 x 4 x 1 x 512
-        #     feat_fc_video_target = nn.AvgPool2d(kernel_size=(num_segments, 1))(feat_fc_video_target)  # 16 x 4 x 1 x 512
-        #
-        #     feat_fc_video_source = feat_fc_video_source.squeeze(1).squeeze(1)  # e.g. 16 x 512
-        #     feat_fc_video_target = feat_fc_video_target.squeeze(1).squeeze(1)  # e.g. 16 x 512
+                # if self.use_bn != 'none':
+                #     feat_fc_video_source_3_1, feat_fc_video_target_3_1 = self.domainAlign(feat_fc_video_source_3_1,
+                #                                                                           feat_fc_video_target_3_1,
+                #                                                                           is_train, 'temconv_1',
+                #                                                                           self.alpha.item(), num_segments,
+                #                                                                           1)
+                #
+                # feat_fc_video_source = self.relu(feat_fc_video_source_3_1)  # 16 x 1 x 5 x 512
+                # feat_fc_video_target = self.relu(feat_fc_video_target_3_1)  # 16 x 1 x 5 x 512
+                #
+                # feat_fc_video_source = nn.AvgPool2d(kernel_size=(num_segments, 1))(feat_fc_video_source)  # 16 x 4 x 1 x 512
+                # feat_fc_video_target = nn.AvgPool2d(kernel_size=(num_segments, 1))(feat_fc_video_target)  # 16 x 4 x 1 x 512
+                #
+                # feat_fc_video_source = feat_fc_video_source.squeeze(1).squeeze(1)  # e.g. 16 x 512
+                # feat_fc_video_target = feat_fc_video_target.squeeze(1).squeeze(1)  # e.g. 16 x 512
 
         if self.baseline_type == 'video':
             feat_all_source.append(feat_fc_video_source.view((batch_source,) + feat_fc_video_source.size()[-1:]))
@@ -996,16 +1004,15 @@ class VideoModel(nn.Module):
                                           num_segments)  # select output from frame or video prediction
         output_target = self.final_output(pred_fc_target, pred_fc_video_target, num_segments)
 
-        output_source_2 = output_source
-        output_target_2 = output_target
+        output_source_2 = []
+        output_target_2 = []
 
         if self.ens_DA == 'MCD':
-            pred_fc_video_source_2 = self.fc_classifier_video_source_2(feat_fc_video_source)
-            pred_fc_video_target_2 = self.fc_classifier_video_target_2(
-                feat_fc_video_target) if self.share_params == 'N' else self.fc_classifier_video_source_2(
-                feat_fc_video_target)
-            output_source_2 = self.final_output(pred_fc_source, pred_fc_video_source_2, num_segments)
-            output_target_2 = self.final_output(pred_fc_target, pred_fc_video_target_2, num_segments)
+            for i in range(self.num_experts):
+                pred_fc_video_source_2 = self._modules['fc_classifier_video_source_2_{}'.format(i)](feat_fc_video_source)
+                pred_fc_video_target_2 = self._modules['fc_classifier_video_source_2_{}'.format(i)](feat_fc_video_target)
+                output_source_2.append(self.final_output(pred_fc_source, pred_fc_video_source_2, num_segments))
+                output_target_2.append(self.final_output(pred_fc_target, pred_fc_video_target_2, num_segments))
 
         if self.baseline_type == 'frame' or 'video':
             if source_edge_frame.size()[1] < source_to_target_edge[-1].size()[0]:
