@@ -35,14 +35,14 @@ gpu_count = torch.cuda.device_count()
 
 def main():
 	global args, best_prec1, writer
-	if path.exists('opts.pkl'):
-		with open('opts.pkl', 'rb') as f:
-			args = pickle.load(f)
-	else:
-		args = parser.parse_args()
-		with open('opts.pkl', 'wb') as f:
-			pickle.dump(args, f)
-	# args = parser.parse_args()
+	# if path.exists('opts.pkl'):
+	# 	with open('opts.pkl', 'rb') as f:
+	# 		args = pickle.load(f)
+	# else:
+	# 	args = parser.parse_args()
+	# 	with open('opts.pkl', 'wb') as f:
+	# 		pickle.dump(args, f)
+	args = parser.parse_args()
 
 	print(Fore.GREEN + 'Baseline:', args.baseline_type)
 	print(Fore.GREEN + 'Frame aggregation method:', args.frame_aggregation)
@@ -63,8 +63,11 @@ def main():
 			print(Fore.GREEN + 'Apply the adaptive normalization approach:', args.use_bn)
 
 	# determine the categories
-	class_names = [line.strip().split(' ', 1)[1] for line in open(args.class_file)]
-	num_class = len(class_names)
+	if args.dataset != 'gameplay_kinetics':
+		class_names = [line.strip().split(' ', 1)[1] for line in open(args.class_file)]
+		num_class = len(class_names)
+	else:
+		num_class = 30
 
 	#=== check the folder existence ===#
 	path_exp = args.exp_path + args.modality + '/'

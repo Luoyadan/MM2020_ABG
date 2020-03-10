@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #====== parameters ======#
-dataset=hmdb_ucf # hmdb_ucf | hmdb_ucf_small | ucf_olympic
+dataset=gameplay_kinetics # hmdb_ucf | hmdb_ucf_small | ucf_olympic
 class_file='data/classInd_'$dataset'.txt'
 training=true # true | false
 testing=false # true | false
@@ -28,13 +28,13 @@ fi
 path_data_root=./dataset/ # depend on users
 path_exp_root=action-experiments/ # depend on users
 
-if [ "$dataset" == "hmdb_ucf" ] || [ "$dataset" == "hmdb_ucf_small" ] ||[ "$dataset" == "ucf_olympic" ]
+if [ "$dataset" == "hmdb_ucf" ] || [ "$dataset" == "hmdb_ucf_small" ] ||[ "$dataset" == "ucf_olympic" ] ||[ "$dataset" == "gameplay_kinetics" ]
 then
-	dataset_source=ucf101 # depend on users
-	dataset_target=hmdb51 # depend on users
-	dataset_val=hmdb51 # depend on users
-	num_source=1438 # number of training data (source) 
-	num_target=840 # number of training data (target)
+	dataset_source=kinetics # depend on users
+	dataset_target=gameplay # depend on users
+	dataset_val=gameplay # depend on users
+	num_source=43378 # number of training data (source)
+	num_target=2625 # number of training data (target)
 
 	path_data_source=$path_data_root$dataset_source'/'
 	path_data_target=$path_data_root$dataset_target'/'
@@ -81,23 +81,24 @@ beta_0=0.75 # U->H: 0.75 | H->U: 1
 beta_1=0.75 # U->H: 0.75 | H->U: 0.75
 beta_2=0.5 # U->H: 0.5 | H->U: 0.5
 
-use_attn=TransAttn # none | TransAttn | general
-n_attn=1
+use_attn=none # none | TransAttn | general
+n_attn=0
 use_attn_frame=none # none | TransAttn | general
 
 use_bn=none # none | AdaBN | AutoDIAL
-add_loss_DA=attentive_entropy # none | target_entropy | attentive_entropy
+add_loss_DA=none # none | target_entropy | attentive_entropy
 gamma=0.003 # U->H: 0.003 | H->U: 0.3
 
-ens_DA=none # none | MCD
-mu=0
+ens_DA=MCD # none | MCD
+mu=8.0
 
 # parameters for architectures
 bS=128 # batch size
-bS_2=$((bS * num_target / num_source ))
+bS_2=128
+#$((bS * num_target / num_source ))
 echo '('$bS', '$bS_2')'
 
-lr=3e-2
+lr=4e-2
 optimizer=SGD
 
 if [ "$use_target" == "none" ] 
@@ -141,9 +142,9 @@ then
 	gd=20
 	
 	#------ main command ------#
-	python main.py $dataset $class_file $modality $train_source_list $train_target_list $val_list --exp_path $exp_path \
+	python main_G.py $dataset $class_file $modality $train_source_list $train_target_list $val_list --exp_path $exp_path \
 	--arch $arch --pretrained $pretrained --baseline_type $baseline_type --frame_aggregation $frame_aggregation \
-	--num_segments $num_segments --val_segments $val_segments --add_fc $add_fc --fc_dim $fc_dim --dropout_i 0.3 --dropout_v 0.3 \
+	--num_segments $num_segments --val_segments $val_segments --add_fc $add_fc --fc_dim $fc_dim --dropout_i 0.2 --dropout_v 0.2 \
 	--use_target $use_target --share_params $share_params \
 	--dis_DA $dis_DA --alpha $alpha --place_dis N Y N \
 	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y N \
