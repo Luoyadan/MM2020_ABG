@@ -23,7 +23,8 @@ from colorama import init
 from colorama import Fore, Back, Style
 import numpy as np
 from tensorboardX import SummaryWriter
-
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2"
 np.random.seed(1)
 torch.manual_seed(1)
 torch.cuda.manual_seed_all(1)
@@ -570,7 +571,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 					loss_adversarial_single = criterion_domain(pred_domain, domain_label)
 
 					loss_adversarial += loss_adversarial_single
-			loss_adversarial = loss_adversarial * 4.0
+			loss_adversarial = loss_adversarial
 			losses_a.update(loss_adversarial.item(), pred_domain.size(0))
 			loss += loss_adversarial
 

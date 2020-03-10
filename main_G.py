@@ -27,7 +27,10 @@ from tensorboardX import SummaryWriter
 np.random.seed(1)
 torch.manual_seed(1)
 torch.cuda.manual_seed_all(1)
-
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1"
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = True
 init(autoreset=True)
 
 best_prec1 = 0
@@ -117,8 +120,6 @@ def main():
 				optimizer.load_state_dict(checkpoint['optimizer'])
 		else:
 			print(Back.RED + "=> no checkpoint found at '{}'".format(args.resume))
-
-	cudnn.benchmark = True
 
 	#--- open log files ---#
 	if not args.evaluate:
@@ -582,10 +583,10 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 		# 2. discrepancy loss for MCD (CVPR 18)
 		if args.ens_DA == 'MCD' and args.use_target != 'none':
-			_, _, _, _, _, attn_target, out_target, out_target_2, pred_domain_target, feat_target, _, _ = model(source_data, target_data, source_label, beta, mu, is_train=True, reverse=True)
+			# _, _, _, _, _, attn_target, out_target, out_target_2, pred_domain_target, feat_target, _, _ = model(source_data, target_data, source_label, beta, mu, is_train=True, reverse=True)
 
 			# ignore dummy tensors
-			_, out_target, out_target_2, _, _ = removeDummy(attn_target, out_target, out_target_2, pred_domain_target, feat_target, batch_target_ori)
+			# _, out_target, out_target_2, _, _ = removeDummy(attn_target, out_target, out_target_2, pred_domain_target, feat_target, batch_target_ori)
 
 			loss_dis = -dis_MCD(out_target, out_target_2)
 			losses_s.update(loss_dis.item(), out_target.size(0))
