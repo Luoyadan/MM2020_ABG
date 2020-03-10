@@ -336,6 +336,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 	criterion_edge = torch.nn.MSELoss(reduction='sum').cuda()
 
+
 	if args.no_partialbn:
 		model.module.partialBN(False)
 	else:
@@ -484,7 +485,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 		loss_classification = criterion(out, label)
 		if args.ens_DA == 'MCD' and args.use_target != 'none':
 			for expert in range(args.num_experts):
-				loss_classification += criterion(out_source_2[expert], label)
+				loss_classification += criterion(out_source_2[expert], label) / args.num_experts
 
 		losses_c.update(loss_classification.item(), out_source.size(0)) # pytorch 0.4.X
 		loss = loss_classification
@@ -590,7 +591,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 			# ignore dummy tensors
 			# _, out_target, out_target_2, _, _ = removeDummy(attn_target, out_target, out_target_2, pred_domain_target, feat_target, batch_target_ori)
 			for expert in range(args.num_experts):
-				loss_dis = -dis_MCD(out_target, out_target_2[expert])
+				loss_dis = -dis_MCD(out_target, out_target_2[expert]) / args.num_experts
 				losses_s.update(loss_dis.item(), out_target.size(0))
 				loss += loss_dis
 
