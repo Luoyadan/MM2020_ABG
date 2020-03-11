@@ -7,8 +7,8 @@ training=true # true | false
 testing=false # true | false
 modality=RGB 
 frame_type=feature # frame | feature
-num_segments=10 # sample frame # of each video for training
-test_segments=10
+num_segments=8 # sample frame # of each video for training
+test_segments=8
 baseline_type=video
 frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
@@ -93,8 +93,8 @@ ens_DA=MCD # none | MCD
 mu=8.0
 
 # parameters for architectures
-bS=128 # batch size
-bS_2=128
+bS=96 # batch size
+bS_2=96
 #$((bS * num_target / num_source ))
 echo '('$bS', '$bS_2')'
 
