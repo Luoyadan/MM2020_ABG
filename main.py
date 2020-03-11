@@ -65,8 +65,11 @@ def main():
 			print(Fore.GREEN + 'Apply the adaptive normalization approach:', args.use_bn)
 
 	# determine the categories
-	class_names = [line.strip().split(' ', 1)[1] for line in open(args.class_file)]
-	num_class = len(class_names)
+	if args.dataset != 'gameplay_kinetics':
+		class_names = [line.strip().split(' ', 1)[1] for line in open(args.class_file)]
+		num_class = len(class_names)
+	else:
+		num_class = 30
 
 	#=== check the folder existence ===#
 	path_exp = args.exp_path + args.modality + '/'
