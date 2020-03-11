@@ -784,8 +784,8 @@ class VideoModel(nn.Module):
         #     target_edge_video = target_edge_video.float().cuda()
 
         # input_data is a list of tensors --> need to do pre-processing
-        feat_base_source = input_source.view(-1, input_source.size()[-1])  # e.g. 256 x 25 x 2048 --> 6400 x 2048
-        feat_base_target = input_target.view(-1, input_target.size()[-1])  # e.g. 256 x 25 x 2048 --> 6400 x 2048
+        feat_fc_source = input_source.view(-1, input_source.size()[-1])  # e.g. 256 x 25 x 2048 --> 6400 x 2048
+        feat_fc_target = input_target.view(-1, input_target.size()[-1])  # e.g. 256 x 25 x 2048 --> 6400 x 2048
 
         # === shared layers ===#
         # need to separate BN for source & target ==> otherwise easy to overfit to source data
@@ -798,8 +798,11 @@ class VideoModel(nn.Module):
 
         # # adaptive BN
         if self.use_bn != 'none':
-            feat_fc_source, feat_fc_target = self.domainAlign(feat_base_source, feat_base_target, is_train, 'shared',
+            feat_fc_source, feat_fc_target = self.domainAlign(feat_fc_source, feat_fc_target, is_train, 'shared',
                                                               self.alpha.item(), num_segments, 1)
+            feat_all_source.append(feat_fc_source.view(
+                (batch_source, num_segments) + feat_fc_source.size()[-1:]))  # reshape ==> 1st dim is the batch size
+            feat_all_target.append(feat_fc_target.view((batch_target, num_segments) + feat_fc_target.size()[-1:]))
 
         # feat_fc_source = self.relu(feat_fc_source)
         # feat_fc_target = self.relu(feat_fc_target)
@@ -807,9 +810,7 @@ class VideoModel(nn.Module):
         # feat_fc_target = self.dropout_i(feat_fc_target)
 
         # feat_fc = self.dropout_i(feat_fc)
-        feat_all_source.append(feat_fc_source.view(
-            (batch_source, num_segments) + feat_fc_source.size()[-1:]))  # reshape ==> 1st dim is the batch size
-        feat_all_target.append(feat_fc_target.view((batch_target, num_segments) + feat_fc_target.size()[-1:]))
+
 
         # if self.add_fc > 1:
         #     feat_fc_source = self.fc_feature_shared_2_source(feat_fc_source)

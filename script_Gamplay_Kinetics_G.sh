@@ -30,9 +30,9 @@ path_exp_root=action-experiments/ # depend on users
 
 if [ "$dataset" == "hmdb_ucf" ] || [ "$dataset" == "hmdb_ucf_small" ] ||[ "$dataset" == "ucf_olympic" ] ||[ "$dataset" == "gameplay_kinetics" ]
 then
-	dataset_source=kinetics # depend on users
-	dataset_target=gameplay # depend on users
-	dataset_val=gameplay # depend on users
+	dataset_source=gameplay # depend on users
+	dataset_target=kinetics # depend on users
+	dataset_val=kinetics # depend on users
 	num_source=43378 # number of training data (source)
 	num_target=2625 # number of training data (target)
 

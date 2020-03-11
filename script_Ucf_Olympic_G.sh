@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #====== parameters ======#
-dataset=gameplay_kinetics # hmdb_ucf | hmdb_ucf_small | ucf_olympic
+dataset=ucf_olympic # hmdb_ucf | hmdb_ucf_small | ucf_olympic
 class_file='data/classInd_'$dataset'.txt'
 training=true # true | false
 testing=false # true | false
@@ -28,13 +28,13 @@ fi
 path_data_root=./dataset/ # depend on users
 path_exp_root=action-experiments/ # depend on users
 
-if [ "$dataset" == "hmdb_ucf" ] || [ "$dataset" == "hmdb_ucf_small" ] ||[ "$dataset" == "ucf_olympic" ] ||[ "$dataset" == "gameplay_kinetics" ]
+if [ "$dataset" == "hmdb_ucf" ] || [ "$dataset" == "hmdb_ucf_small" ] ||[ "$dataset" == "ucf_olympic" ]
 then
-	dataset_source=kinetics # depend on users
-	dataset_target=gameplay # depend on users
-	dataset_val=gameplay # depend on users
-	num_source=43378 # number of training data (source)
-	num_target=2625 # number of training data (target)
+	dataset_source=ucf101 # depend on users
+	dataset_target=olympic # depend on users
+	dataset_val=olympic # depend on users
+	num_source=601 # number of training data (source)
+	num_target=250 # number of training data (target)
 
 	path_data_source=$path_data_root$dataset_source'/'
 	path_data_target=$path_data_root$dataset_target'/'
@@ -153,7 +153,7 @@ then
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame \
 	--gd $gd --lr $lr --lr_decay $lr_decay --lr_adaptive $lr_adaptive --lr_steps $lr_steps_1 $lr_steps_2 --epochs $epochs --optimizer $optimizer \
 	--n_rnn 1 --rnn_cell GRU --n_directions 1 --n_ts 5 \
-	-b $bS $bS_2 128 -j 4 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
+	-b $bS $bS_2 $bS -j 4 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
 
 fi
 

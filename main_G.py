@@ -46,7 +46,7 @@ def main():
 	# 	with open('opts.pkl', 'wb') as f:
 	# 		pickle.dump(args, f)
 	args = parser.parse_args()
-
+	print(Fore.GREEN + 'Dataset:', args.dataset)
 	print(Fore.GREEN + 'Baseline:', args.baseline_type)
 	print(Fore.GREEN + 'Frame aggregation method:', args.frame_aggregation)
 	print(Fore.GREEN + 'Number of Experts: ', args.num_experts)
