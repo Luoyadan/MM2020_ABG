@@ -88,7 +88,7 @@ def main():
 				add_fc=args.add_fc, fc_dim = args.fc_dim,
 				dropout_i=args.dropout_i, dropout_v=args.dropout_v, partial_bn=not args.no_partialbn,
 				use_bn=args.use_bn if args.use_target != 'none' else 'none', ens_DA=args.ens_DA if args.use_target != 'none' else 'none',
-				n_experts=args.num_experts, n_rnn=args.n_rnn, rnn_cell=args.rnn_cell, n_directions=args.n_directions, n_ts=args.n_ts,
+				ens_high_order=args.ens_high_order_loss, n_experts=args.num_experts, n_rnn=args.n_rnn, rnn_cell=args.rnn_cell, n_directions=args.n_directions, n_ts=args.n_ts,
 				use_attn=args.use_attn, n_attn=args.n_attn, use_attn_frame=args.use_attn_frame,
 				verbose=args.verbose, share_params=args.share_params)
 

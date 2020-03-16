@@ -233,7 +233,7 @@ class VideoModel(nn.Module):
                  before_softmax=True,
                  dropout_i=0.5, dropout_v=0.5, use_bn='none', ens_DA='none',
                  crop_num=1, partial_bn=True, verbose=True, add_fc=1, fc_dim=1024,
-                 n_experts=1, n_rnn=1, rnn_cell='LSTM', n_directions=1, n_ts=5,
+                 ens_high_order=False, n_experts=1, n_rnn=1, rnn_cell='LSTM', n_directions=1, n_ts=5,
                  use_attn='TransAttn', n_attn=1, use_attn_frame='none',
                  share_params='Y'):
         super(VideoModel, self).__init__()
@@ -255,6 +255,7 @@ class VideoModel(nn.Module):
 
         #MOE
         self.num_experts = n_experts
+        self.ens_high_order = ens_high_order
 
         # RNN
         self.n_layers = n_rnn
@@ -314,8 +315,9 @@ class VideoModel(nn.Module):
         self.num_layers = 1
         self.GNN_frame = GraphNetwork(in_features=self.feature_dim, node_features=self.fc_dim, edge_features=self.fc_dim,
                                 num_layers=self.num_layers, dropout=self.dropout_rate_i)
-        # self.GNN_video = GraphNetwork(in_features=self.fc_dim, node_features=self.fc_dim, edge_features=self.fc_dim,
-        #                               num_layers=self.num_layers, dropout=self.dropout_rate_i, num_segments=self.train_segments)
+        if self.ens_high_order:
+            self.GNN_video = GraphNetwork(in_features=self.fc_dim, node_features=self.fc_dim, edge_features=self.fc_dim,
+                                      num_layers=self.num_layers, dropout=self.dropout_rate_i, num_segments=self.train_segments)
 
 
 
@@ -960,10 +962,10 @@ class VideoModel(nn.Module):
         #     source_to_target_edge, node_source_list, node_target_list = self.GNN(feat_fc_video_source, feat_fc_video_target)
         #     feat_fc_video_source = node_source_list[-1]
         #     feat_fc_video_target = node_target_list[-1]
-
-        # _, node_source_list, node_target_list = self.GNN_video(feat_fc_video_source, feat_fc_video_target, source_to_target_edge[-1])
-        # feat_fc_video_source = node_source_list[-1]
-        # feat_fc_video_target = node_target_list[-1]
+        if self.ens_high_order:
+            _, node_source_list, node_target_list = self.GNN_video(feat_fc_video_source, feat_fc_video_target, source_to_target_edge[-1])
+            feat_fc_video_source = node_source_list[-1]
+            feat_fc_video_target = node_target_list[-1]
 
         pred_fc_video_source = self.fc_classifier_video_source(feat_fc_video_source)
         pred_fc_video_target = self.fc_classifier_video_target(
@@ -1016,19 +1018,13 @@ class VideoModel(nn.Module):
                 output_target_2.append(self.final_output(pred_fc_target, pred_fc_video_target_2, num_segments))
 
         if self.baseline_type == 'frame' or 'video':
-            if source_edge_frame.size()[1] < source_to_target_edge[-1].size()[0]:
-                padded_source_edge = torch.zeros((source_to_target_edge[-1].size()[0], source_to_target_edge[-1].size()[0]))
-                padded_source_edge[:source_edge_frame.size()[1], :source_edge_frame.size()[1]] = source_edge_frame
-                source_edge_frame = padded_source_edge.cuda()
-            high_order_edge_map = F.normalize(source_edge_frame, dim=1, p=1).mm(source_to_target_edge[-1]).mm(F.normalize(target_edge_frame, dim=0, p=1))
-
-        # elif self.baseline_type == 'video':
-        #     if source_edge_video.size()[1] < source_to_target_edge[-1].size()[0]:
-        #         padded_source_edge = torch.zeros((source_to_target_edge[-1].size()[0], source_to_target_edge[-1].size()[0]))
-        #         padded_source_edge[:source_edge_video.size()[1], :source_edge_video.size()[1]] = source_edge_video
-        #         source_edge_video = padded_source_edge.cuda()
-        #     high_order_edge_map = F.normalize(source_edge_video.mm(source_to_target_edge[-1]).mm(target_edge_video), dim=0, p=1)
-        #     high_order_edge_map = F.normalize(high_order_edge_map, dim=1, p=1)
+            # if source_edge_frame.size()[1] < source_to_target_edge[-1].size()[0]:
+            #     padded_source_edge = torch.zeros((source_to_target_edge[-1].size()[0], source_to_target_edge[-1].size()[0]))
+            #     padded_source_edge[:source_edge_frame.size()[1], :source_edge_frame.size()[1]] = source_edge_frame
+            #     source_edge_frame = padded_source_edge.cuda()
+            # high_order_edge_map = F.normalize(source_edge_frame, dim=1, p=1).mm(source_to_target_edge[-1]).mm(F.normalize(target_edge_frame, dim=0, p=1))
+            high_order_edge_map = nn.AvgPool2d(kernel_size=(num_segments, num_segments))(source_to_target_edge[-1].unsqueeze(0)).unsqueeze(0)
+            high_order_edge_map = nn.Upsample(scale_factor=num_segments, mode='nearest')(high_order_edge_map).squeeze()
 
 
         return attn_relation_source, output_source, output_source_2, pred_domain_all_source[::-1], \

@@ -10,11 +10,11 @@ frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=rnn # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
-use_target=uSv # none | Sv | uSv
+use_target=none # none | Sv | uSv
 share_params=Y # Y | N
 
 if [ "$use_target" == "none" ] 
@@ -151,8 +151,8 @@ then
 	--ens_DA $ens_DA --mu $mu \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame \
 	--gd $gd --lr $lr --lr_decay $lr_decay --lr_adaptive $lr_adaptive --lr_steps $lr_steps_1 $lr_steps_2 --epochs $epochs --optimizer $optimizer \
-	--n_rnn 1 --rnn_cell GRU --n_directions 1 --n_ts 5 \
-	-b $bS $bS_2 128 -j 4 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
+	--n_rnn 1 --rnn_cell LSTM --n_directions 1 --n_ts 5 \
+	-b $bS $bS_2 $bS -j 4 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
 
 fi
 
@@ -167,7 +167,7 @@ then
 	$val_list $exp_path$modality'/'$model'.pth.tar' \
 	--arch $arch --test_segments $test_segments \
 	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion $exp_path$modality'/confusion_matrix_'$dataset_target'-'$model'-'$test_segments'seg' \
-	--n_rnn 1 --rnn_cell LSTM --n_directions 1 --n_ts 5 \
+	--n_rnn 1 --rnn_cell  --n_directions 1 --n_ts 5 \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame --use_bn $use_bn --share_params $share_params \
 	-j 4 --bS 512 --top 1 3 5 --add_fc 1 --fc_dim $fc_dim --baseline_type $baseline_type --frame_aggregation $frame_aggregation 
 
