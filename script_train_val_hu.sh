@@ -14,7 +14,7 @@ frame_aggregation=rnn # method to integrate the frame-level features (avgpool | 
 add_fc=1
 fc_dim=512
 arch=resnet101
-use_target=none # none | Sv | uSv
+use_target=uSv # none | Sv | uSv
 share_params=Y # Y | N
 
 if [ "$use_target" == "none" ] 
@@ -72,8 +72,8 @@ pretrained=none
 
 #====== parameters for algorithms ======#
 # parameters for DA approaches
-dis_DA=none # none | DAN | JAN
-alpha=0 # depend on users
+dis_DA=DAN # none | DAN | JAN
+alpha=1 # depend on users
 
 adv_pos_0=Y # Y | N (discriminator for relation features)
 adv_DA=RevGrad # none | RevGrad
@@ -81,12 +81,12 @@ beta_0=0.75 # U->H: 0.75 | H->U: 1
 beta_1=0.75 # U->H: 0.75 | H->U: 0.75
 beta_2=0.5 # U->H: 0.5 | H->U: 0.5
 
-use_attn=TransAttn # none | TransAttn | general
+use_attn=none # none | TransAttn | general
 n_attn=1
 use_attn_frame=none # none | TransAttn | general
 
 use_bn=none # none | AdaBN | AutoDIAL
-add_loss_DA=attentive_entropy # none | target_entropy | attentive_entropy
+add_loss_DA=none # none | target_entropy | attentive_entropy
 gamma=0.003 # U->H: 0.003 | H->U: 0.3
 
 ens_DA=none # none | MCD
@@ -151,7 +151,7 @@ then
 	--ens_DA $ens_DA --mu $mu \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame \
 	--gd $gd --lr $lr --lr_decay $lr_decay --lr_adaptive $lr_adaptive --lr_steps $lr_steps_1 $lr_steps_2 --epochs $epochs --optimizer $optimizer \
-	--n_rnn 1 --rnn_cell GRU --n_directions 1 --n_ts 5 \
+	--n_rnn 1 --rnn_cell LSTM --n_directions 1 --n_ts 5 \
 	-b $bS $bS_2 $bS -j 4 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
 
 fi

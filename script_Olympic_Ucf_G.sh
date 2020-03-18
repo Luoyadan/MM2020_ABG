@@ -89,8 +89,8 @@ use_bn=AdaBN # none | AdaBN | AutoDIAL
 add_loss_DA=none # none | target_entropy | attentive_entropy
 gamma=0.003 # U->H: 0.003 | H->U: 0.3
 
-ens_DA=MCD # none | MCD
-mu=8.0
+ens_DA=none # none | MCD
+mu=0
 
 # parameters for architectures
 bS=128 # batch size
@@ -147,7 +147,7 @@ then
 	--num_segments $num_segments --val_segments $val_segments --add_fc $add_fc --fc_dim $fc_dim --dropout_i 0.2 --dropout_v 0.2 \
 	--use_target $use_target --share_params $share_params \
 	--dis_DA $dis_DA --alpha $alpha --place_dis N Y N \
-	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y N \
+	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y Y \
 	--use_bn $use_bn --add_loss_DA $add_loss_DA --gamma $gamma \
 	--ens_DA $ens_DA --mu $mu \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame \
