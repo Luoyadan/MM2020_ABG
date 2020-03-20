@@ -10,7 +10,7 @@ frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=rnn # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
@@ -77,7 +77,7 @@ alpha=0 # depend on users
 
 adv_pos_0=N # Y | N (discriminator for relation features)
 adv_DA=RevGrad # none | RevGrad
-beta_0=0.75 # U->H: 0.75 | H->U: 1
+beta_0=1 # U->H: 0.75 | H->U: 1
 beta_1=0.75 # U->H: 0.75 | H->U: 0.75
 beta_2=0.5 # U->H: 0.5 | H->U: 0.5
 
@@ -86,11 +86,11 @@ n_attn=0
 use_attn_frame=none # none | TransAttn | general
 
 use_bn=AdaBN # none | AdaBN | AutoDIAL
-add_loss_DA=none # none | target_entropy | attentive_entropy
-gamma=0.03 # U->H: 0.003 | H->U: 0.3
+add_loss_DA=target_entropy # none | target_entropy | attentive_entropy
+gamma=0.09 # U->H: 0.003 | H->U: 0.3
 
-ens_DA=MCD # none | MCD
-mu=8
+ens_DA=none # none | MCD
+mu=0
 
 # parameters for architectures
 bS=128 # batch size
