@@ -20,7 +20,7 @@ class RelationModule(torch.nn.Module):
                 )
         return classifier
     def forward(self, input):
-        input = input.view(input.size(0), self.num_frames*self.img_feature_dim)
+        input = input.reshape(input.size(0), self.num_frames*self.img_feature_dim)
         input = self.classifier(input)
         return input
 
@@ -58,7 +58,7 @@ class RelationModuleMultiScale(torch.nn.Module):
     def forward(self, input):
         # the first one is the largest scale
         act_scale_1 = input[:, self.relations_scales[0][0] , :]
-        act_scale_1 = act_scale_1.view(act_scale_1.size(0), self.scales[0] * self.img_feature_dim)
+        act_scale_1 = act_scale_1.reshape(act_scale_1.size(0), self.scales[0] * self.img_feature_dim)
         act_scale_1 = self.fc_fusion_scales[0](act_scale_1)
         act_scale_1 = act_scale_1.unsqueeze(1) # add one dimension for the later concatenation
         act_all = act_scale_1.clone()
@@ -73,7 +73,7 @@ class RelationModuleMultiScale(torch.nn.Module):
             #for idx in idx_relations_randomsample:
             for idx in idx_relations_evensample:
                 act_relation = input[:, self.relations_scales[scaleID][idx], :]
-                act_relation = act_relation.view(act_relation.size(0), self.scales[scaleID] * self.img_feature_dim)
+                act_relation = act_relation.reshape(act_relation.size(0), self.scales[scaleID] * self.img_feature_dim)
                 act_relation = self.fc_fusion_scales[scaleID](act_relation)
                 act_relation = act_relation.unsqueeze(1)  # add one dimension for the later concatenation
                 act_relation_all += act_relation

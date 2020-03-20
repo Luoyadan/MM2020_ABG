@@ -410,7 +410,7 @@ class VideoModel(nn.Module):
             self.bn_trn_S = nn.BatchNorm1d(self.num_bottleneck)
             self.bn_trn_T = nn.BatchNorm1d(self.num_bottleneck)
         elif self.frame_aggregation == 'trn-m':  # 4. TRN (ECCV 2018) ==> fix segment # for both train/val
-            self.num_bottleneck = 256
+            self.num_bottleneck = 512
             self.TRN = TRNmodule.RelationModuleMultiScale(feat_shared_dim, self.num_bottleneck, self.train_segments)
             self.bn_trn_S = nn.BatchNorm1d(self.num_bottleneck)
             self.bn_trn_T = nn.BatchNorm1d(self.num_bottleneck)
@@ -464,7 +464,7 @@ class VideoModel(nn.Module):
         constant_(self.fc_classifier_video_source.bias, 0)
 
         # 4. label embedding
-        self.label_embedding = nn.Linear(num_class, feat_video_dim)
+        self.label_embedding = nn.Linear(num_class, feat_frame_dim)
         normal_(self.label_embedding.weight, 0, std)
         constant_(self.label_embedding.bias, 0)
 
@@ -889,61 +889,61 @@ class VideoModel(nn.Module):
                                    0]  # assign random tensors to attention values to avoid runtime error
 
 
-        # elif 'trn' in self.frame_aggregation:
-        #     feat_fc_video_source = feat_fc_source.view((-1, num_segments) + feat_fc_source.size()[
-        #                                                                     -1:])  # reshape based on the segments (e.g. 640x512 --> 128x5x512)
-        #     feat_fc_video_target = feat_fc_target.view((-1, num_segments) + feat_fc_target.size()[
-        #                                                                     -1:])  # reshape based on the segments (e.g. 640x512 --> 128x5x512)
-        #
-        #     feat_fc_video_relation_source = self.TRN(
-        #         feat_fc_video_source)  # 128x5x512 --> 128x5x256 (256-dim. relation feature vectors x 5)
-        #     feat_fc_video_relation_target = self.TRN(feat_fc_video_target)
-        #
-        #     # adversarial branch
-        #     pred_fc_domain_video_relation_source = self.domain_classifier_relation(feat_fc_video_relation_source, beta)
-        #     pred_fc_domain_video_relation_target = self.domain_classifier_relation(feat_fc_video_relation_target, beta)
-        #
-        #     # transferable attention
-        #     if self.use_attn != 'none':  # get the attention weighting
-        #         feat_fc_video_relation_source, attn_relation_source = self.get_attn_feat_relation(
-        #             feat_fc_video_relation_source, pred_fc_domain_video_relation_source, num_segments)
-        #         feat_fc_video_relation_target, attn_relation_target = self.get_attn_feat_relation(
-        #             feat_fc_video_relation_target, pred_fc_domain_video_relation_target, num_segments)
-        #     else:
-        #         attn_relation_source = feat_fc_video_relation_source[:, :,
-        #                                0]  # assign random tensors to attention values to avoid runtime error
-        #         attn_relation_target = feat_fc_video_relation_target[:, :,
-        #                                0]  # assign random tensors to attention values to avoid runtime error
-        #
-        #     # sum up relation features (ignore 1-relation)
-        #     feat_fc_video_source = torch.sum(feat_fc_video_relation_source, 1)
-        #     feat_fc_video_target = torch.sum(feat_fc_video_relation_target, 1)
-        #
-        # elif self.frame_aggregation == 'temconv':  # DA operation inside temconv
-        #     feat_fc_video_source = feat_fc_source.view(
-        #         (-1, 1, num_segments) + feat_fc_source.size()[-1:])  # reshape based on the segments
-        #     feat_fc_video_target = feat_fc_target.view(
-        #         (-1, 1, num_segments) + feat_fc_target.size()[-1:])  # reshape based on the segments
-        #
-        #     # 1st TCL
-        #     feat_fc_video_source_3_1 = self.tcl_3_1(feat_fc_video_source)
-        #     feat_fc_video_target_3_1 = self.tcl_3_1(feat_fc_video_target)
-        #
-                # if self.use_bn != 'none':
-                #     feat_fc_video_source_3_1, feat_fc_video_target_3_1 = self.domainAlign(feat_fc_video_source_3_1,
-                #                                                                           feat_fc_video_target_3_1,
-                #                                                                           is_train, 'temconv_1',
-                #                                                                           self.alpha.item(), num_segments,
-                #                                                                           1)
-                #
-                # feat_fc_video_source = self.relu(feat_fc_video_source_3_1)  # 16 x 1 x 5 x 512
-                # feat_fc_video_target = self.relu(feat_fc_video_target_3_1)  # 16 x 1 x 5 x 512
-                #
-                # feat_fc_video_source = nn.AvgPool2d(kernel_size=(num_segments, 1))(feat_fc_video_source)  # 16 x 4 x 1 x 512
-                # feat_fc_video_target = nn.AvgPool2d(kernel_size=(num_segments, 1))(feat_fc_video_target)  # 16 x 4 x 1 x 512
-                #
-                # feat_fc_video_source = feat_fc_video_source.squeeze(1).squeeze(1)  # e.g. 16 x 512
-                # feat_fc_video_target = feat_fc_video_target.squeeze(1).squeeze(1)  # e.g. 16 x 512
+        elif 'trn' in self.frame_aggregation:
+            feat_fc_video_source = feat_fc_source.view((-1, num_segments) + feat_fc_source.size()[
+                                                                            -1:])  # reshape based on the segments (e.g. 640x512 --> 128x5x512)
+            feat_fc_video_target = feat_fc_target.view((-1, num_segments) + feat_fc_target.size()[
+                                                                            -1:])  # reshape based on the segments (e.g. 640x512 --> 128x5x512)
+
+            feat_fc_video_relation_source = self.TRN(
+                feat_fc_video_source)  # 128x5x512 --> 128x5x256 (256-dim. relation feature vectors x 5)
+            feat_fc_video_relation_target = self.TRN(feat_fc_video_target)
+
+            # adversarial branch
+            pred_fc_domain_video_relation_source = self.domain_classifier_relation(feat_fc_video_relation_source, beta)
+            pred_fc_domain_video_relation_target = self.domain_classifier_relation(feat_fc_video_relation_target, beta)
+
+            # transferable attention
+            if self.use_attn != 'none':  # get the attention weighting
+                feat_fc_video_relation_source, attn_relation_source = self.get_attn_feat_relation(
+                    feat_fc_video_relation_source, pred_fc_domain_video_relation_source, num_segments)
+                feat_fc_video_relation_target, attn_relation_target = self.get_attn_feat_relation(
+                    feat_fc_video_relation_target, pred_fc_domain_video_relation_target, num_segments)
+            else:
+                attn_relation_source = feat_fc_video_relation_source[:, :,
+                                       0]  # assign random tensors to attention values to avoid runtime error
+                attn_relation_target = feat_fc_video_relation_target[:, :,
+                                       0]  # assign random tensors to attention values to avoid runtime error
+
+            # sum up relation features (ignore 1-relation)
+            feat_fc_video_source = torch.sum(feat_fc_video_relation_source, 1)
+            feat_fc_video_target = torch.sum(feat_fc_video_relation_target, 1)
+
+        elif self.frame_aggregation == 'temconv':  # DA operation inside temconv
+            feat_fc_video_source = feat_fc_source.view(
+                (-1, 1, num_segments) + feat_fc_source.size()[-1:])  # reshape based on the segments
+            feat_fc_video_target = feat_fc_target.view(
+                (-1, 1, num_segments) + feat_fc_target.size()[-1:])  # reshape based on the segments
+
+            # 1st TCL
+            feat_fc_video_source_3_1 = self.tcl_3_1(feat_fc_video_source)
+            feat_fc_video_target_3_1 = self.tcl_3_1(feat_fc_video_target)
+
+            if self.use_bn != 'none':
+                feat_fc_video_source_3_1, feat_fc_video_target_3_1 = self.domainAlign(feat_fc_video_source_3_1,
+                                                                                      feat_fc_video_target_3_1,
+                                                                                      is_train, 'temconv_1',
+                                                                                      self.alpha.item(), num_segments,
+                                                                                      1)
+
+            feat_fc_video_source = self.relu(feat_fc_video_source_3_1)  # 16 x 1 x 5 x 512
+            feat_fc_video_target = self.relu(feat_fc_video_target_3_1)  # 16 x 1 x 5 x 512
+
+            feat_fc_video_source = nn.AvgPool2d(kernel_size=(num_segments, 1))(feat_fc_video_source)  # 16 x 4 x 1 x 512
+            feat_fc_video_target = nn.AvgPool2d(kernel_size=(num_segments, 1))(feat_fc_video_target)  # 16 x 4 x 1 x 512
+
+            feat_fc_video_source = feat_fc_video_source.squeeze(1).squeeze(1)  # e.g. 16 x 512
+            feat_fc_video_target = feat_fc_video_target.squeeze(1).squeeze(1)  # e.g. 16 x 512
 
         if self.baseline_type == 'video':
             feat_all_source.append(feat_fc_video_source.view((batch_source,) + feat_fc_video_source.size()[-1:]))
