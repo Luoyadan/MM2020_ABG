@@ -464,7 +464,7 @@ class VideoModel(nn.Module):
         constant_(self.fc_classifier_video_source.bias, 0)
 
         # 4. label embedding
-        self.label_embedding = nn.Linear(num_class, feat_frame_dim)
+        self.label_embedding = nn.Linear(num_class, feat_video_dim)
         normal_(self.label_embedding.weight, 0, std)
         constant_(self.label_embedding.bias, 0)
 
@@ -802,9 +802,9 @@ class VideoModel(nn.Module):
         if self.use_bn != 'none':
             feat_fc_source, feat_fc_target = self.domainAlign(feat_fc_source, feat_fc_target, is_train, 'shared',
                                                               self.alpha.item(), num_segments, 1)
-            feat_all_source.append(feat_fc_source.view(
-                (batch_source, num_segments) + feat_fc_source.size()[-1:]))  # reshape ==> 1st dim is the batch size
-            feat_all_target.append(feat_fc_target.view((batch_target, num_segments) + feat_fc_target.size()[-1:]))
+            # feat_all_source.append(feat_fc_source.view(
+            #     (batch_source, num_segments) + feat_fc_source.size()[-1:]))  # reshape ==> 1st dim is the batch size
+            # feat_all_target.append(feat_fc_target.view((batch_target, num_segments) + feat_fc_target.size()[-1:]))
 
         # feat_fc_source = self.relu(feat_fc_source)
         # feat_fc_target = self.relu(feat_fc_target)
@@ -852,10 +852,10 @@ class VideoModel(nn.Module):
         pred_fc_source = self.fc_classifier_source(feat_fc_source)
         pred_fc_target = self.fc_classifier_target(
             feat_fc_target) if self.share_params == 'N' else self.fc_classifier_source(feat_fc_target)
-        if self.baseline_type == 'frame':
-            feat_all_source.append(pred_fc_source.view(
+        # if self.baseline_type == 'frame':
+        feat_all_source.append(pred_fc_source.view(
                 (batch_source, num_segments) + pred_fc_source.size()[-1:]))  # reshape ==> 1st dim is the batch size
-            feat_all_target.append(pred_fc_target.view((batch_target, num_segments) + pred_fc_target.size()[-1:]))
+        feat_all_target.append(pred_fc_target.view((batch_target, num_segments) + pred_fc_target.size()[-1:]))
 
         source_onehot_frame = torch.zeros_like(pred_fc_source).cuda()
         source_onehot_frame.scatter_(1, source_label_frame.unsqueeze(-1), 1)

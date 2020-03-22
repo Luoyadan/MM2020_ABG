@@ -398,9 +398,9 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 		source_label = source_label.cuda(non_blocking=True) # pytorch 0.4.X
 		target_label = target_label.cuda(non_blocking=True) # pytorch 0.4.X
 
-		if args.baseline_type == 'frame':
-			source_label_frame = source_label.unsqueeze(1).repeat(1,args.num_segments).view(-1) # expand the size for all the frames
-			target_label_frame = target_label.unsqueeze(1).repeat(1, args.num_segments).view(-1)
+		# if args.baseline_type == 'frame':
+		source_label_frame = source_label.unsqueeze(1).repeat(1,args.num_segments).view(-1) # expand the size for all the frames
+		target_label_frame = target_label.unsqueeze(1).repeat(1, args.num_segments).view(-1)
 
 		label_source = source_label_frame if args.baseline_type == 'frame' else source_label  # determine the label for calculating the loss function
 		label_target = target_label_frame if args.baseline_type == 'frame' else target_label
@@ -483,6 +483,8 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 			label = torch.cat((label, label_target))
 
 		loss_classification = criterion(out, label)
+		loss_classification += 0.70 * criterion(feat_source[-1].view(-1, num_class), source_label_frame)
+
 		if args.ens_DA == 'MCD' and args.use_target != 'none':
 			for expert in range(args.num_experts):
 				loss_classification += criterion(out_source_2[expert], label) / args.num_experts
@@ -581,6 +583,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 		# 1. entropy loss for target data
 		if args.add_loss_DA == 'target_entropy' and args.use_target != 'none':
 			loss_entropy = cross_entropy_soft(out_target)
+			loss_entropy += 0.7 * cross_entropy_soft(feat_target[-1])
 			losses_e.update(loss_entropy.item(), out_target.size(0))
 			loss += gamma * loss_entropy
 
