@@ -967,6 +967,10 @@ class VideoModel(nn.Module):
             feat_fc_video_source = node_source_list[-1]
             feat_fc_video_target = node_target_list[-1]
 
+
+        feat_all_source.append(feat_fc_video_source.view((batch_source,) + feat_fc_video_source.size()[-1:]))
+        feat_all_target.append(feat_fc_video_target.view((batch_target,) + feat_fc_video_target.size()[-1:]))
+
         pred_fc_video_source = self.fc_classifier_video_source(feat_fc_video_source)
         pred_fc_video_target = self.fc_classifier_video_target(
             feat_fc_video_target) if self.share_params == 'N' else self.fc_classifier_video_source(feat_fc_video_target)

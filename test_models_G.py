@@ -31,6 +31,7 @@ parser.add_argument('weights', type=str)
 
 # ========================= Model Configs ==========================
 parser.add_argument('--ens_high_order_loss', type=bool, default=True)
+parser.add_argument('--tsne', type=bool, default=True)
 parser.add_argument('--arch', type=str, default="resnet101")
 parser.add_argument('--test_segments', type=int, default=5)
 parser.add_argument('--add_fc', default=1, type=int, metavar='M', help='number of additional fc layers (excluding the last fc layer) (e.g. 0, 1, 2, ...)')
@@ -69,14 +70,14 @@ parser.add_argument('--bS', default=2, help='batch size', type=int, required=Fal
 parser.add_argument('--gpus', nargs='+', type=int, default=None)
 parser.add_argument('--flow_prefix', type=str, default='')
 
-# if path.exists('opts_test.pkl'):
-# 	with open('opts_test.pkl', 'rb') as f:
-# 		args = pickle.load(f)
-# else:
-# 	args = parser.parse_args()
-# 	with open('opts_test.pkl', 'wb') as f:
-# 		pickle.dump(args, f)
-args = parser.parse_args()
+if path.exists('opts_test.pkl'):
+	with open('opts_test.pkl', 'rb') as f:
+		args = pickle.load(f)
+else:
+	args = parser.parse_args()
+	with open('opts_test.pkl', 'wb') as f:
+		pickle.dump(args, f)
+# args = parser.parse_args()
 
 class_names = [line.strip().split(' ', 1)[1] for line in open(args.class_file)]
 num_class = len(class_names)
@@ -134,7 +135,7 @@ def eval_video(video_data):
 	# data.view(-1, length, data.size(2), data.size(3)).shape = [sample #,2048]
 
 	with torch.no_grad():
-		_, _, _, _, _, attn, out, _, _, _, _, _ = net(data, data, label, [0, 0, 0], 0, is_train=False, reverse=False)
+		_, _, _, _, feat_source, attn, out, _, _, feat_target, _, _ = net(data, data, label, [0, 0, 0], 0, is_train=False, reverse=False)
 		out = nn.Softmax(dim=1)(out).topk(max(args.top))
 		prob = out[0].data.cpu().numpy().copy() # rst.shape = [sample #, top class #]
 		pred_labels = out[1].data.cpu().numpy().copy() # rst.shape = [sample #, top class #]
@@ -148,7 +149,7 @@ def eval_video(video_data):
 			prob_video = np.mean(prob_video, axis=1)
 
 
-		return i, prob_video, pred_labels, label.cpu().numpy(), attn.cpu()
+		return i, prob_video, pred_labels, label.cpu().numpy(), attn.cpu(), feat_source[1], feat_target[1]
 #############################################################
 
 proc_start_time = time.time()
@@ -158,7 +159,8 @@ count_correct_topK = [0 for i in range(len(args.top))]
 count_total = 0
 video_pred = [[] for i in range(max(args.top))]
 video_labels = []
-
+feat_source_list = []
+feat_target_list = []
 #=== Testing ===#
 print(Fore.CYAN + 'start testing......')
 for i, (data, label) in enumerate(data_gen):
@@ -178,6 +180,10 @@ for i, (data, label) in enumerate(data_gen):
 	preds = rst[2][:data_size_ori[0]]
 	labels = rst[3][:data_size_ori[0]]
 	attn = rst[4][:data_size_ori[0]]
+	feat_source = rst[5][:data_size_ori[0]]
+	feat_target = rst[6][:data_size_ori[0]]
+	feat_source_list.append(feat_source.cpu())
+	feat_target_list.append(feat_target.cpu())
 
 	attn_values = torch.cat((attn_values, attn))  # save the attention values
 
@@ -208,6 +214,12 @@ cf = [confusion_matrix(video_labels, video_pred[k], labels=list(range(num_class)
 
 plot_confusion_matrix(args.save_confusion+'.pdf', cf[0], classes=class_names, normalize=True,
 					  title='Normalized Confusion Matrix')
+
+if args.tsne:
+	feat_source = torch.cat(feat_source_list).squeeze()
+	feat_target = torch.cat(feat_target_list).squeeze()
+	save_tsne_path='tsne/'+args.save_confusion[17:]+'.png'
+	visualize_TSNE(feat_source, feat_target, save_tsne_path)
 
 #--- overall accuracy ---#
 cls_cnt = cf[0].sum(axis=1)

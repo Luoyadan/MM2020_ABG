@@ -3,14 +3,14 @@
 #====== parameters ======#
 dataset=hmdb_ucf # hmdb_ucf | hmdb_ucf_small | ucf_olympic
 class_file='data/classInd_'$dataset'.txt'
-training=true # true | false
+training=false # true | false
 testing=true # true | false
 modality=RGB
 frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=rnn # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
@@ -97,7 +97,7 @@ bS=128 # batch size
 bS_2=128
 #$((bS * num_target / num_source ))
 echo '('$bS', '$bS_2')'
-rnn=LSTM
+rnn=GRU
 lr=4e-2
 optimizer=SGD
 
