@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix
 from dataset import TSNDataSet
 from models_G import VideoModel
 from utils.utils import plot_confusion_matrix
-
+from utils.visualization import visualize_TSNE
 from colorama import init
 from colorama import Fore, Back, Style
 from tqdm import tqdm
@@ -206,8 +206,8 @@ if args.save_attention:
 
 cf = [confusion_matrix(video_labels, video_pred[k], labels=list(range(num_class))) for k in range(max(args.top))]
 
-plot_confusion_matrix(args.save_confusion+'.png', cf[0], classes=class_names, normalize=True,
-					  title='Normalized confusion matrix')
+plot_confusion_matrix(args.save_confusion+'.pdf', cf[0], classes=class_names, normalize=True,
+					  title='Normalized Confusion Matrix')
 
 #--- overall accuracy ---#
 cls_cnt = cf[0].sum(axis=1)

@@ -27,13 +27,14 @@ def plot_confusion_matrix(path, cm, classes,
     else:
         print('Confusion matrix, without normalization')
 
-    plt.figure(figsize=(13, 10))
+    plt.figure(figsize=(14, 12))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
+    plt.title(title + ' (%)', fontsize=20)
+    cbar = plt.colorbar(shrink=0.945)
+    cbar.ax.tick_params(labelsize=14)
     tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=90)
-    plt.yticks(tick_marks, classes)
+    plt.xticks(tick_marks, classes, rotation=90, fontsize=14)
+    plt.yticks(tick_marks, classes, fontsize=14)
 
     factor = 100 if normalize else 1
     fmt = '.0f' if normalize else 'd'
@@ -41,10 +42,10 @@ def plot_confusion_matrix(path, cm, classes,
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         plt.text(j, i, format(cm[i, j]*factor, fmt),
                  horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
+                 color="white" if cm[i, j] > thresh else "black", fontsize=14)
 
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
+    # plt.tight_layout()
+    plt.ylabel('Ground Truth', fontsize=20)
+    plt.xlabel('Predicted Label', fontsize=20)
 
     plt.savefig(path)
