@@ -233,7 +233,7 @@ class VideoModel(nn.Module):
                  before_softmax=True,
                  dropout_i=0.5, dropout_v=0.5, use_bn='none', ens_DA='none',
                  crop_num=1, partial_bn=True, verbose=True, add_fc=1, fc_dim=1024,
-                 ens_high_order=True, n_experts=1, n_rnn=1, rnn_cell='LSTM', n_directions=1, n_ts=5,
+                 ens_high_order=False, n_experts=1, n_rnn=1, rnn_cell='LSTM', n_directions=1, n_ts=5,
                  use_attn='TransAttn', n_attn=1, use_attn_frame='none',
                  share_params='Y'):
         super(VideoModel, self).__init__()
