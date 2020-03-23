@@ -36,12 +36,12 @@ def visualize_TSNE(source_feat, target_feat, path):
     # We create a scatter plot.
     f = plt.figure(figsize=(8, 8))
     ax = plt.subplot(aspect='equal')
-    sc = ax.scatter(digits_proj[:, 0], digits_proj[:, 1], lw=0, s=20,
+    sc = ax.scatter(digits_proj[:, 0], digits_proj[:, 1], lw=0, s=30,
                     c=palette[y.astype(np.int)], alpha=0.5)
-    plt.xlim(-25, 25)
-    plt.ylim(-25, 25)
+    # plt.xlim(-25, 25)
+    # plt.ylim(-25, 25)
     ax.axis('off')
-    ax.axis('tight')
+    # ax.axis('tight')
     plt.savefig(path)
 
     txts = []
