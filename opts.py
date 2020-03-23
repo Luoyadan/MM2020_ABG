@@ -14,7 +14,7 @@ parser.add_argument('val_list', type=str) #, default='./dataset/list_hmdb51_val_
 # ========================= Model Configs ==========================
 parser.add_argument('--num_layers', type=int, default=1)
 parser.add_argument('--num_experts', type=int, default=1)
-parser.add_argument('--ens_high_order_loss', type=bool, default=True)
+parser.add_argument('--ens_high_order_loss', type=bool, default=False)
 parser.add_argument('--tsne', type=bool, default=True)
 parser.add_argument('--arch', type=str, default="resnet101")
 parser.add_argument('--pretrained', type=str, default="none")
@@ -124,7 +124,7 @@ parser.add_argument('--flow_prefix', default="", type=str)
 parser.add_argument('--save_model', default=False, action="store_true")
 parser.add_argument('--save_best_log', default="best.log", type=str)
 parser.add_argument('--save_attention', type=int, default=-1)
-parser.add_argument('--tensorboard', dest='tensorboard', default=True, action='store_true')
+parser.add_argument('--tensorboard', dest='tensorboard', action='store_true')
 
 
 

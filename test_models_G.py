@@ -69,14 +69,14 @@ parser.add_argument('--bS', default=2, help='batch size', type=int, required=Fal
 parser.add_argument('--gpus', nargs='+', type=int, default=None)
 parser.add_argument('--flow_prefix', type=str, default='')
 
-if path.exists('opts_test.pkl'):
-	with open('opts_test.pkl', 'rb') as f:
-		args = pickle.load(f)
-else:
-	args = parser.parse_args()
-	with open('opts_test.pkl', 'wb') as f:
-		pickle.dump(args, f)
-# args = parser.parse_args()
+# if path.exists('opts_test.pkl'):
+# 	with open('opts_test.pkl', 'rb') as f:
+# 		args = pickle.load(f)
+# else:
+# 	args = parser.parse_args()
+# 	with open('opts_test.pkl', 'wb') as f:
+# 		pickle.dump(args, f)
+args = parser.parse_args()
 
 class_names = [line.strip().split(' ', 1)[1] for line in open(args.class_file)]
 num_class = len(class_names)
@@ -86,7 +86,7 @@ print(Fore.CYAN + 'preparing the model......')
 net = VideoModel(num_class, args.baseline_type, args.frame_aggregation, args.modality,
 		train_segments=args.test_segments if args.baseline_type == 'video' else 1, val_segments=args.test_segments if args.baseline_type == 'video' else 1,
 		base_model=args.arch, add_fc=args.add_fc, fc_dim=args.fc_dim, share_params=args.share_params,
-		dropout_i=args.dropout_i, dropout_v=args.dropout_v, use_bn=args.use_bn, partial_bn=False,
+		dropout_i=args.dropout_i, dropout_v=args.dropout_v, use_bn=args.use_bn, partial_bn=False, ens_high_order=False,
 		n_rnn=args.n_rnn, rnn_cell=args.rnn_cell, n_directions=args.n_directions, n_ts=args.n_ts,
 		use_attn=args.use_attn, n_attn=args.n_attn, use_attn_frame=args.use_attn_frame,
 		verbose=args.verbose)
