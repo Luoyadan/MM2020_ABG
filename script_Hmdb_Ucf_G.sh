@@ -3,21 +3,21 @@
 #====== parameters ======#
 dataset=hmdb_ucf # hmdb_ucf | hmdb_ucf_small | ucf_olympic
 class_file='data/classInd_'$dataset'.txt'
-training=true # true | false
-testing=false # true | false
-modality=RGB 
+training=false # true | false
+testing=true # true | false
+modality=RGB
 frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=trn-m # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
 use_target=uSv # none | Sv | uSv
 share_params=Y # Y | N
 
-if [ "$use_target" == "none" ] 
+if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
 else
@@ -53,7 +53,7 @@ then
 	else
     	dataset_target=$dataset_target'_train'
 	fi
-	
+
 	if [[ "$dataset_val" =~ "val" ]]
 	then
 		dataset_val=$dataset_val
@@ -101,7 +101,7 @@ echo '('$bS', '$bS_2')'
 lr=4e-2
 optimizer=SGD
 
-if [ "$use_target" == "none" ] 
+if [ "$use_target" == "none" ]
 then
 	dis_DA=none
 	alpha=0
@@ -128,9 +128,9 @@ echo 'exp_path: '$exp_path
 
 
 #====== select mode ======#
-if ($training) 
+if ($training)
 then
-	
+
 	val_segments=$test_segments
 
 	# parameters for optimization
@@ -140,7 +140,7 @@ then
     	lr_steps_2=20
     	epochs=30
 	gd=20
-	
+
 	#------ main command ------#
 	python main_G.py $dataset $class_file $modality $train_source_list $train_target_list $val_list --exp_path $exp_path \
 	--arch $arch --pretrained $pretrained --baseline_type $baseline_type --frame_aggregation $frame_aggregation \
@@ -164,13 +164,13 @@ then
 
 	# testing on the validation set
 	echo 'testing on the validation set'
-	python test_models.py $class_file $modality \
+	python test_models_G.py $class_file $modality \
 	$val_list $exp_path$modality'/'$model'.pth.tar' \
 	--arch $arch --test_segments $test_segments \
-	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion $exp_path$modality'/confusion_matrix_'$dataset_target'-'$model'-'$test_segments'seg' \
+	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion 'confusion_matrix/'$dataset'-'$dataset_target'-'$frame_aggregation'-'$test_segments'seg' \
 	--n_rnn 1 --rnn_cell LSTM --n_directions 1 --n_ts 5 \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame --use_bn $use_bn --share_params $share_params \
-	-j 4 --bS 512 --top 1 3 5 --add_fc 1 --fc_dim $fc_dim --baseline_type $baseline_type --frame_aggregation $frame_aggregation 
+	-j 4 --bS 128 --top 1 3 5 --add_fc 1 --fc_dim $fc_dim --baseline_type $baseline_type --frame_aggregation $frame_aggregation
 
 fi
 
