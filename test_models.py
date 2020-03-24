@@ -11,7 +11,7 @@ from torch.autograd import Variable
 from sklearn.metrics import confusion_matrix
 
 from dataset import TSNDataSet
-from models_backup import VideoModel
+from models import VideoModel
 from utils.utils import plot_confusion_matrix
 
 from colorama import init
