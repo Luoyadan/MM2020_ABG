@@ -30,8 +30,9 @@ parser.add_argument('test_list', type=str)
 parser.add_argument('weights', type=str)
 
 # ========================= Model Configs ==========================
+parser.add_argument('--val_tsne_list', type=str)
 parser.add_argument('--ens_high_order_loss', type=bool, default=True)
-parser.add_argument('--tsne', type=bool, default=True)
+parser.add_argument('--tsne', type=bool, default=False)
 parser.add_argument('--arch', type=str, default="resnet101")
 parser.add_argument('--test_segments', type=int, default=5)
 parser.add_argument('--add_fc', default=1, type=int, metavar='M', help='number of additional fc layers (excluding the last fc layer) (e.g. 0, 1, 2, ...)')
@@ -64,20 +65,20 @@ parser.add_argument('--verbose', default=False, action="store_true")
 parser.add_argument('--save_confusion', type=str, default=None)
 parser.add_argument('--save_scores', type=str, default=None)
 parser.add_argument('--save_attention', type=str, default=None)
-parser.add_argument('--max_num', type=int, default=-1, help='number of videos to test')
+parser.add_argument('--max_num', type=int, default=4, help='number of videos to test')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N', help='number of data loading workers (default: 4)')
 parser.add_argument('--bS', default=2, help='batch size', type=int, required=False)
 parser.add_argument('--gpus', nargs='+', type=int, default=None)
 parser.add_argument('--flow_prefix', type=str, default='')
 
-if path.exists('opts_test.pkl'):
-	with open('opts_test.pkl', 'rb') as f:
-		args = pickle.load(f)
-else:
-	args = parser.parse_args()
-	with open('opts_test.pkl', 'wb') as f:
-		pickle.dump(args, f)
-# args = parser.parse_args()
+# if path.exists('opts_test.pkl'):
+# 	with open('opts_test.pkl', 'rb') as f:
+# 		args = pickle.load(f)
+# else:
+# 	args = parser.parse_args()
+# 	with open('opts_test.pkl', 'wb') as f:
+# 		pickle.dump(args, f)
+args = parser.parse_args()
 
 class_names = [line.strip().split(' ', 1)[1] for line in open(args.class_file)]
 num_class = len(class_names)
@@ -87,7 +88,7 @@ print(Fore.CYAN + 'preparing the model......')
 net = VideoModel(num_class, args.baseline_type, args.frame_aggregation, args.modality,
 		train_segments=args.test_segments if args.baseline_type == 'video' else 1, val_segments=args.test_segments if args.baseline_type == 'video' else 1,
 		base_model=args.arch, add_fc=args.add_fc, fc_dim=args.fc_dim, share_params=args.share_params,
-		dropout_i=args.dropout_i, dropout_v=args.dropout_v, use_bn=args.use_bn, partial_bn=False, ens_high_order=False,
+		dropout_i=args.dropout_i, dropout_v=args.dropout_v, use_bn=args.use_bn, partial_bn=False, ens_high_order=args.ens_high_order_loss,
 		n_rnn=args.n_rnn, rnn_cell=args.rnn_cell, n_directions=args.n_directions, n_ts=args.n_ts,
 		use_attn=args.use_attn, n_attn=args.n_attn, use_attn_frame=args.use_attn_frame,
 		verbose=args.verbose)
@@ -112,7 +113,19 @@ data_set = TSNDataSet("", args.test_list, num_dataload=num_test, num_segments=ar
 	)
 data_loader = torch.utils.data.DataLoader(data_set, batch_size=args.bS, shuffle=False, num_workers=args.workers, pin_memory=True)
 
-data_gen = tqdm(data_loader)
+if args.tsne:
+	tsne_data_set = TSNDataSet("", args.val_tsne_list, num_dataload=num_test, num_segments=args.test_segments,
+	new_length=data_length, modality=args.modality,
+	image_tmpl="img_{:05d}.t7" if args.modality in ['RGB', 'RGBDiff', 'RGBDiff2', 'RGBDiffplus'] else args.flow_prefix+"{}_{:05d}.t7",
+	test_mode=True,
+	)
+	tsne_data_loader = torch.utils.data.DataLoader(tsne_data_set, batch_size=args.bS, shuffle=False, num_workers=args.workers, pin_memory=True)
+
+if args.tsne:
+	data_loader = zip(tsne_data_loader, data_loader)
+	data_gen = data_loader
+else:
+	data_gen = tqdm(data_loader)
 
 #--- GPU processing ---#
 net = torch.nn.DataParallel(net.cuda())
@@ -123,10 +136,17 @@ attn_values = torch.Tensor()
 
 #############################################################
 def eval_video(video_data):
-	i, data, label = video_data
 
-	data = data.cuda()
-	label = label.cuda(non_blocking=True) # pytorch 0.4.X
+	i, data, label = video_data
+	if args.tsne:
+		source_data, target_data = data
+		source_label, target_label = label
+		source_data, target_data = source_data.cuda(), target_data.cuda()
+		source_label, target_label = source_label.cuda(), target_label.cuda()
+
+	else:
+		data = data.cuda()
+		label = label.cuda(non_blocking=True) # pytorch 0.4.X
 
 	num_crop = 1 
 
@@ -135,7 +155,14 @@ def eval_video(video_data):
 	# data.view(-1, length, data.size(2), data.size(3)).shape = [sample #,2048]
 
 	with torch.no_grad():
-		_, _, _, _, feat_source, attn, out, _, _, feat_target, _, _ = net(data, data, label, [0, 0, 0], 0, is_train=False, reverse=False)
+		if args.tsne:
+			_, _, _, _, feat_source, attn, out, _, _, feat_target, _, _ = net(source_data, target_data, source_label, [0, 0, 0], 0,
+																			  is_train=False, reverse=False)
+			return feat_source[1], feat_target[1]
+		else:
+			_, _, _, _, feat_source, attn, out, _, _, feat_target, _, _ = net(data, data, label, [0, 0, 0], 0, is_train=False, reverse=False)
+
+
 		out = nn.Softmax(dim=1)(out).topk(max(args.top))
 		prob = out[0].data.cpu().numpy().copy() # rst.shape = [sample #, top class #]
 		pred_labels = out[1].data.cpu().numpy().copy() # rst.shape = [sample #, top class #]
@@ -149,11 +176,11 @@ def eval_video(video_data):
 			prob_video = np.mean(prob_video, axis=1)
 
 
-		return i, prob_video, pred_labels, label.cpu().numpy(), attn.cpu(), feat_source[1], feat_target[1]
+		return i, prob_video, pred_labels, label.cpu().numpy(), attn.cpu()
 #############################################################
 
 proc_start_time = time.time()
-max_num = args.max_num if args.max_num > 0 else len(data_loader.dataset)
+max_num = args.max_num if args.tsne else len(data_loader.dataset)
 
 count_correct_topK = [0 for i in range(len(args.top))]
 count_total = 0
@@ -161,108 +188,130 @@ video_pred = [[] for i in range(max(args.top))]
 video_labels = []
 feat_source_list = []
 feat_target_list = []
+source_label_list = []
+target_label_list = []
 #=== Testing ===#
 print(Fore.CYAN + 'start testing......')
+# if args.tsne:
+# 	for ((source_data, source_label),(target_data, target_label)) in data_gen:
+# else:
 for i, (data, label) in enumerate(data_gen):
-	data_size_ori = data.size() # original shape
-	if data_size_ori[0] < args.bS:
-		data_dummy = torch.zeros(args.bS - data_size_ori[0], data_size_ori[1], data_size_ori[2])
-		data = torch.cat((data, data_dummy))
-		label_dummy = torch.zeros(args.bS - data_size_ori[0]).long()
-		label = torch.cat((label, label_dummy))
+	if args.tsne:
+		source_data, source_label = data
+		target_data, target_label = label
+		data = (source_data, target_data)
+		label = (source_label, target_label)
+	else:
+		data_size_ori = data.size() # original shape
+		if data_size_ori[0] < args.bS:
+			data_dummy = torch.zeros(args.bS - data_size_ori[0], data_size_ori[1], data_size_ori[2])
+			data = torch.cat((data, data_dummy))
+			label_dummy = torch.zeros(args.bS - data_size_ori[0]).long()
+			label = torch.cat((label, label_dummy))
 
 	if i >= max_num:
 		break
+
 	rst = eval_video((i, data, label))
 
 	# remove the dummy part
-	probs = rst[1][:data_size_ori[0]] # rst[1].shape = [sample #, top class #]
-	preds = rst[2][:data_size_ori[0]]
-	labels = rst[3][:data_size_ori[0]]
-	attn = rst[4][:data_size_ori[0]]
-	feat_source = rst[5][:data_size_ori[0]]
-	feat_target = rst[6][:data_size_ori[0]]
-	feat_source_list.append(feat_source.cpu())
-	feat_target_list.append(feat_target.cpu())
+	if args.tsne:
+		feat_source = rst[0]
+		feat_target = rst[1]
+		feat_source_list.append(feat_source.cpu())
+		feat_target_list.append(feat_target.cpu())
+		source_label_list.append(source_label.cpu())
+		target_label_list.append(target_label.cpu())
+	else:
+		probs = rst[1][:data_size_ori[0]] # rst[1].shape = [sample #, top class #]
+		preds = rst[2][:data_size_ori[0]]
+		labels = rst[3][:data_size_ori[0]]
+		attn = rst[4][:data_size_ori[0]]
 
-	attn_values = torch.cat((attn_values, attn))  # save the attention values
 
-	# accumulate
-	for j in range(len(args.top)):
-		for k in range(args.top[j]):
-			count_correct_topK[j] += ((preds[:,k] == labels) * 1).sum()
-	count_total += (preds[:,0].shape)[0]
-	acc_topK = [float(count_correct_topK[j]) / float(count_total) for j in range(len(args.top))]
+		attn_values = torch.cat((attn_values, attn))  # save the attention values
 
-	for k in range(max(args.top)):
-		video_pred[k] += preds[:,k].tolist() # save the top-K prediction
+		# accumulate
+		for j in range(len(args.top)):
+			for k in range(args.top[j]):
+				count_correct_topK[j] += ((preds[:,k] == labels) * 1).sum()
+		count_total += (preds[:,0].shape)[0]
+		acc_topK = [float(count_correct_topK[j]) / float(count_total) for j in range(len(args.top))]
 
-	video_labels += labels.tolist()
+		for k in range(max(args.top)):
+			video_pred[k] += preds[:,k].tolist() # save the top-K prediction
 
-	cnt_time = time.time() - proc_start_time
-	line_print = '                                                            ' # leave a large space for the tqdm progess bar
-	for j in range(len(args.top)):
-		line_print += 'Pred@%d %f, ' % (args.top[j], acc_topK[j])
+		video_labels += labels.tolist()
 
-	line_print += 'average %f sec/video\r' % (float(cnt_time) / (i + 1) / args.bS)
-	data_gen.set_description(line_print)
+		cnt_time = time.time() - proc_start_time
+		line_print = '                                                            ' # leave a large space for the tqdm progess bar
+		for j in range(len(args.top)):
+			line_print += 'Pred@%d %f, ' % (args.top[j], acc_topK[j])
 
-if args.save_attention:
-	np.savetxt(args.save_attention+'.txt', attn_values.cpu().numpy(), fmt="%s")
+		line_print += 'average %f sec/video\r' % (float(cnt_time) / (i + 1) / args.bS)
+		data_gen.set_description(line_print)
 
-cf = [confusion_matrix(video_labels, video_pred[k], labels=list(range(num_class))) for k in range(max(args.top))]
-
-plot_confusion_matrix(args.save_confusion+'.pdf', cf[0], classes=class_names, normalize=True,
-					  title='Normalized Confusion Matrix')
 
 if args.tsne:
 	feat_source = torch.cat(feat_source_list).squeeze()
 	feat_target = torch.cat(feat_target_list).squeeze()
-	save_tsne_path='tsne/'+args.save_confusion[17:]+'.png'
-	visualize_TSNE(feat_source, feat_target, save_tsne_path)
+	source_label = torch.cat(source_label_list).squeeze()
+	target_label = torch.cat(target_label_list).squeeze()
+	save_tsne_path='tsne/'+args.save_confusion[17:]+'.pdf'
+	visualize_TSNE(feat_source, feat_target, source_label, target_label, save_tsne_path, class_names)
+	print('finished tsne')
+else:
+	if args.save_attention:
+		np.savetxt(args.save_attention+'.txt', attn_values.cpu().numpy(), fmt="%s")
 
-#--- overall accuracy ---#
-cls_cnt = cf[0].sum(axis=1)
-cls_hit = np.array([np.diag(cf[i]) for i in range(max(args.top))])
-cls_acc_topK = [cls_hit[:j].sum(axis=0) / cls_cnt for j in args.top]
+	cf = [confusion_matrix(video_labels, video_pred[k], labels=list(range(num_class))) for k in range(max(args.top))]
 
-if args.verbose:
-	for i in range(len(cls_acc_topK[0])):
-		line_print = ''
-		for j in range(len(args.top)):
-			line_print += str(cls_acc_topK[j][i]) + ' '
-		print(line_print)
-
-final_line = ''
-for j in args.top:
-	final_line += Fore.YELLOW + 'Pred@{:d} {:.02f}% '.format(j, np.sum(cls_hit[:j].sum(axis=0)) / np.sum(cls_cnt) * 100)
-print(final_line)
-
-if args.save_confusion:
-	class_acc_file = open(args.save_confusion + '-top' + str(args.top) + '.txt', 'w')
-
-	for i in range(len(cls_acc_topK[0])):
-		line_print = ''
-		for j in range(len(args.top)):
-			line_print += str(cls_acc_topK[j][i]) + ' '
-		class_acc_file.write(line_print + '\n')
-
-	class_acc_file.close()
+	plot_confusion_matrix(args.save_confusion+'.pdf', cf[0], classes=class_names, normalize=True,
+						  title='Normalized Confusion Matrix')
 
 
-if args.save_scores is not None: 
-	# reorder before saving
-	name_list = [x.strip().split()[0] for x in open(args.test_list)]
 
-	order_dict = {e:i for i, e in enumerate(sorted(name_list))}
+	#--- overall accuracy ---#
+	cls_cnt = cf[0].sum(axis=1)
+	cls_hit = np.array([np.diag(cf[i]) for i in range(max(args.top))])
+	cls_acc_topK = [cls_hit[:j].sum(axis=0) / cls_cnt for j in args.top]
 
-	reorder_output = [None] * len(output)
-	reorder_label = [None] * len(output)
+	if args.verbose:
+		for i in range(len(cls_acc_topK[0])):
+			line_print = ''
+			for j in range(len(args.top)):
+				line_print += str(cls_acc_topK[j][i]) + ' '
+			print(line_print)
 
-	for i in range(len(output)):
-		idx = order_dict[name_list[i]]
-		reorder_output[idx] = output[i]
-		reorder_label[idx] = video_labels[i]
+	final_line = ''
+	for j in args.top:
+		final_line += Fore.YELLOW + 'Pred@{:d} {:.02f}% '.format(j, np.sum(cls_hit[:j].sum(axis=0)) / np.sum(cls_cnt) * 100)
+	print(final_line)
 
-	np.savez(args.save_scores, scores=reorder_output, labels=reorder_label)
-	
+	if args.save_confusion:
+		class_acc_file = open(args.save_confusion + '-top' + str(args.top) + '.txt', 'w')
+
+		for i in range(len(cls_acc_topK[0])):
+			line_print = ''
+			for j in range(len(args.top)):
+				line_print += str(cls_acc_topK[j][i]) + ' '
+			class_acc_file.write(line_print + '\n')
+
+		class_acc_file.close()
+
+
+	if args.save_scores is not None:
+		# reorder before saving
+		name_list = [x.strip().split()[0] for x in open(args.test_list)]
+
+		order_dict = {e:i for i, e in enumerate(sorted(name_list))}
+
+		reorder_output = [None] * len(output)
+		reorder_label = [None] * len(output)
+
+		for i in range(len(output)):
+			idx = order_dict[name_list[i]]
+			reorder_output[idx] = output[i]
+			reorder_label[idx] = video_labels[i]
+
+		np.savez(args.save_scores, scores=reorder_output, labels=reorder_label)

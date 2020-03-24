@@ -46,7 +46,7 @@ def main():
 	# 	with open('opts.pkl', 'wb') as f:
 	# 		pickle.dump(args, f)
 	args = parser.parse_args()
-	args.ens_high_order_loss=False
+	args.ens_high_order_loss=True
 	print(Fore.GREEN + 'Dataset:', args.dataset)
 	print(Fore.GREEN + 'Baseline:', args.baseline_type)
 	print(Fore.GREEN + 'Frame aggregation method:', args.frame_aggregation)

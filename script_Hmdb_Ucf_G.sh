@@ -10,13 +10,13 @@ frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=rnn # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
 use_target=uSv # none | Sv | uSv
 share_params=Y # Y | N
-ens_high_order_loss=False
+ens_high_order_loss=True
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -39,6 +39,8 @@ then
 	path_data_source=$path_data_root$dataset_source'/'
 	path_data_target=$path_data_root$dataset_target'/'
 	path_data_val=$path_data_root$dataset_val'/'
+
+	val_tsne_list=$path_data_source'list_'$dataset_source'_val_'$dataset'-'$frame_type'.txt'
 
 	if [[ "$dataset_source" =~ "train" ]]
 	then
@@ -64,6 +66,7 @@ then
 	train_source_list=$path_data_source'list_'$dataset_source'_'$dataset'-'$frame_type'.txt'
 	train_target_list=$path_data_target'list_'$dataset_target'_'$dataset'-'$frame_type'.txt'
 	val_list=$path_data_val'list_'$dataset_val'_'$dataset'-'$frame_type'.txt'
+
 
 	path_exp=$path_exp_root'Testexp'
 fi
@@ -97,7 +100,7 @@ bS=128 # batch size
 bS_2=128
 #$((bS * num_target / num_source ))
 echo '('$bS', '$bS_2')'
-rnn=GRU
+rnn=LSTM
 lr=4e-2
 optimizer=SGD
 
@@ -166,7 +169,8 @@ then
 	echo 'testing on the validation set'
 	python test_models_G.py $class_file $modality \
 	$val_list $exp_path$modality'/'$model'.pth.tar' \
-	--arch $arch --test_segments $test_segments \
+	--val_tsne_list $val_tsne_list --tsne True \
+	--arch $arch --test_segments $test_segments --ens_high_order_loss $ens_high_order_loss\
 	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion 'confusion_matrix/'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg' \
 	--n_rnn 1 --rnn_cell $rnn --n_directions 1 --n_ts 5 \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame --use_bn $use_bn --share_params $share_params \

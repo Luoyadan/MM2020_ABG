@@ -64,7 +64,7 @@ then
 	train_source_list=$path_data_source'list_'$dataset_source'_'$dataset'-'$frame_type'.txt'
 	train_target_list=$path_data_target'list_'$dataset_target'_'$dataset'-'$frame_type'.txt'
 	val_list=$path_data_val'list_'$dataset_val'_'$dataset'-'$frame_type'.txt'
-
+  val_tsne_list=$path_data_source'list_'$dataset_source'_val-'$frame_type'.txt'
 	path_exp=$path_exp_root'Testexp'
 fi
 
@@ -167,6 +167,7 @@ then
 	python test_models.py $class_file $modality \
 	$val_list $exp_path$modality'/'$model'.pth.tar' \
 	--arch $arch --test_segments $test_segments \
+	--val_tsne_list $val_tsne_list \
 	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion $exp_path$modality'/confusion_matrix_'$dataset_target'-'$model'-'$test_segments'seg' \
 	--n_rnn 1 --rnn_cell LSTM --n_directions 1 --n_ts 5 \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame --use_bn $use_bn --share_params $share_params \
