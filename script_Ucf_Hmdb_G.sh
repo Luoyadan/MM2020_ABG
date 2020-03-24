@@ -10,7 +10,7 @@ frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=rnn # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
@@ -78,8 +78,8 @@ alpha=0 # depend on users
 adv_pos_0=N # Y | N (discriminator for relation features)
 adv_DA=RevGrad # none | RevGrad
 beta_0=1 # U->H: 0.75 | H->U: 1
-beta_1=0.75 # U->H: 0.75 | H->U: 0.75
-beta_2=0.5 # U->H: 0.5 | H->U: 0.5
+beta_1=1 # U->H: 0.75 | H->U: 0.75
+beta_2=0.35 # U->H: 0.5 | H->U: 0.5
 
 use_attn=none # none | TransAttn | general
 n_attn=0
@@ -98,7 +98,7 @@ bS_2=128
 #$((bS * num_target / num_source ))
 echo '('$bS', '$bS_2')'
 
-lr=4e-2
+lr=2e-2
 optimizer=SGD
 
 if [ "$use_target" == "none" ]
