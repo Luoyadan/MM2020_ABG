@@ -64,7 +64,7 @@ class VideoModel(nn.Module):
                  train_segments=5, val_segments=25,
                  base_model='resnet101', path_pretrained='', new_length=None,
                  before_softmax=True,
-                 dropout_i=0.5, dropout_v=0.5, use_bn='none', ens_DA='none',
+                 dropout_i=0.5, dropout_v=0.5, use_bn='none', ens_DA='MCD',
                  crop_num=1, partial_bn=True, verbose=True, add_fc=1, fc_dim=1024,
                  n_rnn=1, rnn_cell='LSTM', n_directions=1, n_ts=5,
                  use_attn='TransAttn', n_attn=1, use_attn_frame='none',
