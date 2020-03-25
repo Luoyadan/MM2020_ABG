@@ -170,7 +170,7 @@ then
   #	echo $ens_high_order_loss
 	python test_models_G.py $class_file $modality \
 	$val_list $exp_path$modality'/'$model'.pth.tar' \
-	--val_tsne_list $val_tsne_list --high_order $ens_high_order_loss --tsne False \
+	--val_tsne_list $val_tsne_list --high_order $ens_high_order_loss --tsne True \
 	--arch $arch --test_segments $test_segments \
 	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion 'confusion_matrix/'$dataset'-'$dataset_target'-'$ens_high_order_loss'-'$frame_aggregation'-'$rnn'-'$test_segments'seg' \
 	--n_rnn 1 --rnn_cell $rnn --n_directions 1 --n_ts 5 \
