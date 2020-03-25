@@ -122,7 +122,7 @@ then
 
 	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'/'$dataset'-'$num_segments'seg_'$j'/'
 else
-	exp_path=$path_exp'-'$optimizer'-high_order_'$ens_high_order_loss'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'-aggr_'$frame_aggregation'-rnn_'$rnn'/'
+	exp_path=$path_exp'-'$optimizer'-high_order_'$ens_high_order_loss'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$dataset_val'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'-aggr_'$frame_aggregation'-rnn_'$rnn'/'
 fi
 
 echo 'exp_path: '$exp_path
@@ -148,7 +148,7 @@ then
 	--ens_high_order_loss $ens_high_order_loss --num_segments $num_segments --val_segments $val_segments --add_fc $add_fc --fc_dim $fc_dim --dropout_i 0.2 --dropout_v 0.2 \
 	--use_target $use_target --share_params $share_params \
 	--dis_DA $dis_DA --alpha $alpha --place_dis N Y N \
-	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y Y \
+	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y NNN \
 	--use_bn $use_bn --add_loss_DA $add_loss_DA --gamma $gamma \
 	--ens_DA $ens_DA  --mu $mu \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame \

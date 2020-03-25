@@ -10,7 +10,7 @@ frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=trn-m # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
@@ -81,8 +81,8 @@ alpha=0 # depend on users
 adv_pos_0=N # Y | N (discriminator for relation features)
 adv_DA=RevGrad # none | RevGrad
 beta_0=1 # U->H: 0.75 | H->U: 1
-beta_1=1 # U->H: 0.75 | H->U: 0.75
-beta_2=0.35 # U->H: 0.5 | H->U: 0.5
+beta_1=0.75 # U->H: 0.75 | H->U: 0.75
+beta_2=0.5 # U->H: 0.5 | H->U: 0.5
 
 use_attn=none # none | TransAttn | general
 n_attn=0
@@ -90,7 +90,7 @@ use_attn_frame=none # none | TransAttn | general
 
 use_bn=AdaBN # none | AdaBN | AutoDIAL
 add_loss_DA=target_entropy # none | target_entropy | attentive_entropy
-gamma=0.03 # U->H: 0.003 | H->U: 0.3
+gamma=0.3 # U->H: 0.003 | H->U: 0.3
 
 ens_DA=none # none | MCD
 mu=0
@@ -124,7 +124,7 @@ then
 
 	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'/'$dataset'-'$num_segments'seg_'$j'/'
 else
-	exp_path=$path_exp'-'$optimizer'-high_order_'$ens_high_order_loss'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'-aggr_'$frame_aggregation'-rnn_'$rnn'/'
+	exp_path=$path_exp'-'$optimizer'-high_order_'$ens_high_order_loss'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$val_dataset'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'-aggr_'$frame_aggregation'-rnn_'$rnn'/'
 fi
 
 echo 'exp_path: '$exp_path
@@ -141,7 +141,7 @@ then
     	lr_adaptive=dann # none | loss | dann
     	lr_steps_1=10
     	lr_steps_2=20
-    	epochs=40
+    	epochs=30
 	gd=20
 
 	#------ main command ------#
@@ -150,7 +150,7 @@ then
 	--ens_high_order_loss $ens_high_order_loss --num_segments $num_segments --val_segments $val_segments --add_fc $add_fc --fc_dim $fc_dim --dropout_i 0.2 --dropout_v 0.2 \
 	--use_target $use_target --share_params $share_params \
 	--dis_DA $dis_DA --alpha $alpha --place_dis N Y N \
-	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y Y \
+	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y N \
 	--use_bn $use_bn --add_loss_DA $add_loss_DA --gamma $gamma \
 	--ens_DA $ens_DA  --mu $mu \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame \

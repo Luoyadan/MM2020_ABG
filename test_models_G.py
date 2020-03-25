@@ -31,8 +31,8 @@ parser.add_argument('weights', type=str)
 
 # ========================= Model Configs ==========================
 parser.add_argument('--val_tsne_list', type=str)
-parser.add_argument('--ens_high_order_loss', type=bool, default=True)
-parser.add_argument('--tsne', type=bool, default=False)
+parser.add_argument('--high_order', default=False)
+parser.add_argument('--tsne', default=False)
 parser.add_argument('--arch', type=str, default="resnet101")
 parser.add_argument('--test_segments', type=int, default=5)
 parser.add_argument('--add_fc', default=1, type=int, metavar='M', help='number of additional fc layers (excluding the last fc layer) (e.g. 0, 1, 2, ...)')
@@ -70,7 +70,7 @@ parser.add_argument('-j', '--workers', default=4, type=int, metavar='N', help='n
 parser.add_argument('--bS', default=2, help='batch size', type=int, required=False)
 parser.add_argument('--gpus', nargs='+', type=int, default=None)
 parser.add_argument('--flow_prefix', type=str, default='')
-
+#
 # if path.exists('opts_test.pkl'):
 # 	with open('opts_test.pkl', 'rb') as f:
 # 		args = pickle.load(f)
@@ -85,10 +85,13 @@ num_class = len(class_names)
 
 #=== Load the network ===#
 print(Fore.CYAN + 'preparing the model......')
+print(Fore.CYAN + 'ens_high_order: ' + args.high_order)
+args.high_order = args.high_order == 'True'
+args.tsne = args.tsne == 'True'
 net = VideoModel(num_class, args.baseline_type, args.frame_aggregation, args.modality,
 		train_segments=args.test_segments if args.baseline_type == 'video' else 1, val_segments=args.test_segments if args.baseline_type == 'video' else 1,
 		base_model=args.arch, add_fc=args.add_fc, fc_dim=args.fc_dim, share_params=args.share_params,
-		dropout_i=args.dropout_i, dropout_v=args.dropout_v, use_bn=args.use_bn, partial_bn=False, ens_high_order=args.ens_high_order_loss,
+		dropout_i=args.dropout_i, dropout_v=args.dropout_v, use_bn=args.use_bn, partial_bn=False, ens_high_order=args.high_order,
 		n_rnn=args.n_rnn, rnn_cell=args.rnn_cell, n_directions=args.n_directions, n_ts=args.n_ts,
 		use_attn=args.use_attn, n_attn=args.n_attn, use_attn_frame=args.use_attn_frame,
 		verbose=args.verbose)
