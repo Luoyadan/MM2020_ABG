@@ -769,6 +769,7 @@ class VideoModel(nn.Module):
         feat_all_target = []
         pred_domain_all_source = []
         pred_domain_all_target = []
+        source_to_target_video = [torch.zeros(1).cuda()]
 
         # construct edge map for frames
         if self.baseline_type == 'frame' or 'video':

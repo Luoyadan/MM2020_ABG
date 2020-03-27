@@ -16,7 +16,7 @@ fc_dim=512
 arch=resnet101
 use_target=uSv # none | Sv | uSv
 share_params=Y # Y | N
-ens_high_order_loss=True
+ens_high_order_loss=False
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -156,7 +156,7 @@ then
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame \
 	--gd $gd --lr $lr --lr_decay $lr_decay --lr_adaptive $lr_adaptive --lr_steps $lr_steps_1 $lr_steps_2 --epochs $epochs --optimizer $optimizer \
 	--n_rnn 1 --rnn_cell $rnn --n_directions 1 --n_ts 5 \
-	-b $bS $bS_2 128 -j 4 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
+	-b $bS $bS_2 128 -j 8 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
 
 fi
 
