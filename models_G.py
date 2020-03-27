@@ -317,7 +317,7 @@ class VideoModel(nn.Module):
                                 num_layers=self.num_layers, dropout=self.dropout_rate_i)
         if self.ens_high_order:
             self.GNN_video = GraphNetwork(in_features=self.fc_dim, node_features=self.fc_dim, edge_features=self.fc_dim,
-                                      num_layers=self.num_layers, dropout=self.dropout_rate_i, num_segments=self.train_segments)
+                                      num_layers=self.num_layers, dropout=self.dropout_rate_i)
 
 
 
@@ -846,7 +846,7 @@ class VideoModel(nn.Module):
         if self.baseline_type == 'frame' or 'video':
             source_to_target_edge, node_source_list, node_target_list = self.GNN_frame(feat_fc_source, feat_fc_target)
             source_to_target_edge[-1] = nn.AvgPool2d(kernel_size=(num_segments, num_segments))(
-                source_to_target_edge[-1].unsqueeze(0)).unsqueeze(0)
+                source_to_target_edge[-1].unsqueeze(0)).squeeze()
             feat_fc_source = node_source_list[-1]
             feat_fc_target = node_target_list[-1]
 
@@ -965,7 +965,7 @@ class VideoModel(nn.Module):
         #     feat_fc_video_source = node_source_list[-1]
         #     feat_fc_video_target = node_target_list[-1]
         if self.ens_high_order:
-            source_to_target_video, node_source_list, node_target_list = self.GNN_video(feat_fc_video_source, feat_fc_video_target, source_to_target_edge[-1])
+            source_to_target_video, node_source_list, node_target_list = self.GNN_video(feat_fc_video_source, feat_fc_video_target)
             feat_fc_video_source = node_source_list[-1]
             feat_fc_video_target = node_target_list[-1]
 

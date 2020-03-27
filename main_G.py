@@ -38,14 +38,14 @@ gpu_count = torch.cuda.device_count()
 
 def main():
 	global args, best_prec1, writer
-	# if path.exists('opts.pkl'):
-	# 	with open('opts.pkl', 'rb') as f:
-	# 		args = pickle.load(f)
-	# else:
-	# 	args = parser.parse_args()
-	# 	with open('opts.pkl', 'wb') as f:
-	# 		pickle.dump(args, f)
-	args = parser.parse_args()
+	if path.exists('opts.pkl'):
+		with open('opts.pkl', 'rb') as f:
+			args = pickle.load(f)
+	else:
+		args = parser.parse_args()
+		with open('opts.pkl', 'wb') as f:
+			pickle.dump(args, f)
+	# args = parser.parse_args()
 	args.ens_high_order_loss=args.ens_high_order_loss=='True'
 	print(Fore.GREEN + 'Dataset:', args.dataset)
 	print(Fore.GREEN + 'Baseline:', args.baseline_type)
@@ -625,7 +625,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 		# 4. edge loss
 		if args.ens_high_order_loss:
-			loss_edge = criterion_edge(source_to_target_edge, high_order_edge_map) * 10.0
+			loss_edge = criterion_edge(source_to_target_edge, high_order_edge_map)
 			losses_edge.update(loss_edge.item(), out_source.size(0))
 			loss += loss_edge
 
