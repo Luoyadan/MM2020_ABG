@@ -845,6 +845,8 @@ class VideoModel(nn.Module):
         # === GNN layers (frame-level) ===#
         if self.baseline_type == 'frame' or 'video':
             source_to_target_edge, node_source_list, node_target_list = self.GNN_frame(feat_fc_source, feat_fc_target)
+            source_to_target_edge[-1] = nn.AvgPool2d(kernel_size=(num_segments, num_segments))(
+                source_to_target_edge[-1].unsqueeze(0)).unsqueeze(0)
             feat_fc_source = node_source_list[-1]
             feat_fc_target = node_target_list[-1]
 
@@ -963,7 +965,7 @@ class VideoModel(nn.Module):
         #     feat_fc_video_source = node_source_list[-1]
         #     feat_fc_video_target = node_target_list[-1]
         if self.ens_high_order:
-            _, node_source_list, node_target_list = self.GNN_video(feat_fc_video_source, feat_fc_video_target, source_to_target_edge[-1])
+            source_to_target_video, node_source_list, node_target_list = self.GNN_video(feat_fc_video_source, feat_fc_video_target, source_to_target_edge[-1])
             feat_fc_video_source = node_source_list[-1]
             feat_fc_video_target = node_target_list[-1]
 
@@ -1021,16 +1023,18 @@ class VideoModel(nn.Module):
                 output_source_2.append(self.final_output(pred_fc_source, pred_fc_video_source_2, num_segments))
                 output_target_2.append(self.final_output(pred_fc_target, pred_fc_video_target_2, num_segments))
 
-        if self.baseline_type == 'frame' or 'video':
+        # if self.baseline_type == 'frame' or 'video':
             # if source_edge_frame.size()[1] < source_to_target_edge[-1].size()[0]:
             #     padded_source_edge = torch.zeros((source_to_target_edge[-1].size()[0], source_to_target_edge[-1].size()[0]))
             #     padded_source_edge[:source_edge_frame.size()[1], :source_edge_frame.size()[1]] = source_edge_frame
             #     source_edge_frame = padded_source_edge.cuda()
             # high_order_edge_map = F.normalize(source_edge_frame, dim=1, p=1).mm(source_to_target_edge[-1]).mm(F.normalize(target_edge_frame, dim=0, p=1))
-            high_order_edge_map = nn.AvgPool2d(kernel_size=(num_segments, num_segments))(source_to_target_edge[-1].unsqueeze(0)).unsqueeze(0)
-            high_order_edge_map = nn.Upsample(scale_factor=num_segments, mode='nearest')(high_order_edge_map).squeeze()
+
+            # print(source_to_target_edge.shape)
+            # print(source_to_target_video[-1].shape)
+            # high_order_edge_map = nn.Upsample(scale_factor=num_segments, mode='nearest')(high_order_edge_map).squeeze()
 
 
         return attn_relation_source, output_source, output_source_2, pred_domain_all_source[::-1], \
                feat_all_source[::-1], attn_relation_target, output_target, output_target_2, pred_domain_all_target[::-1], \
-               feat_all_target[::-1], source_to_target_edge, high_order_edge_map
+               feat_all_target[::-1], source_to_target_edge[-1], source_to_target_video[-1]

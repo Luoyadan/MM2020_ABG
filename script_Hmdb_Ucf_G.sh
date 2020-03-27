@@ -101,7 +101,7 @@ bS_2=128
 #$((bS * num_target / num_source ))
 echo '('$bS', '$bS_2')'
 rnn=LSTM
-lr=2e-2
+lr=4e-2
 optimizer=SGD
 
 if [ "$use_target" == "none" ]
@@ -124,7 +124,7 @@ then
 
 	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'/'$dataset'-'$num_segments'seg_'$j'/'
 else
-	exp_path=$path_exp'-'$optimizer'-high_order_'$ens_high_order_loss'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$val_dataset'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'-aggr_'$frame_aggregation'-rnn_'$rnn'/'
+	exp_path=$path_exp'-'$optimizer'-high_order_'$ens_high_order_loss'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$dataset_val'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'-aggr_'$frame_aggregation'-rnn_'$rnn'/'
 fi
 
 echo 'exp_path: '$exp_path

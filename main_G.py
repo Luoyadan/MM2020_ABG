@@ -46,7 +46,7 @@ def main():
 	# 	with open('opts.pkl', 'wb') as f:
 	# 		pickle.dump(args, f)
 	args = parser.parse_args()
-	args.ens_high_order_loss=False
+	args.ens_high_order_loss=args.ens_high_order_loss=='True'
 	print(Fore.GREEN + 'Dataset:', args.dataset)
 	print(Fore.GREEN + 'Baseline:', args.baseline_type)
 	print(Fore.GREEN + 'Frame aggregation method:', args.frame_aggregation)
@@ -168,6 +168,8 @@ def main():
 	num_source_train = round(num_max_iter*args.batch_size[0]) if args.copy_list[0] == 'Y' else num_source
 	num_target_train = round(num_max_iter*args.batch_size[1]) if args.copy_list[1] == 'Y' else num_target
 
+
+
 	# calculate the weight for each class
 	class_id_list = [int(line.strip().split(' ')[2]) for line in open(args.train_source_list)]
 	class_id, class_data_counts = np.unique(np.array(class_id_list), return_counts=True)
@@ -194,22 +196,37 @@ def main():
 	val_loader = torch.utils.data.DataLoader(val_set, batch_size=args.batch_size[2], shuffle=False,
 											 num_workers=args.workers, pin_memory=True)
 
+
+	val_source_set = TSNDataSet("", args.train_source_list, num_dataload=num_val, num_segments=val_segments,
+							new_length=data_length, modality=args.modality,
+							image_tmpl="img_{:05d}.t7" if args.modality in ["RGB", "RGBDiff", "RGBDiff2", "RGBDiffplus"] else args.flow_prefix+"{}_{:05d}.t7",
+							random_shift=False,
+							test_mode=True,
+							)
+
+	source_sampler = torch.utils.data.sampler.RandomSampler(val_source_set)
+	source_loader = torch.utils.data.DataLoader(val_source_set, batch_size=args.batch_size[0], shuffle=False, sampler=source_sampler, num_workers=args.workers, pin_memory=True)
+
+
 	if not args.evaluate:
-		source_set = TSNDataSet("", args.train_source_list, num_dataload=num_source_train, num_segments=args.num_segments,
+		source_set = TSNDataSet("", args.train_source_list, num_dataload=num_source_train,
+								num_segments=args.num_segments,
 								new_length=data_length, modality=args.modality,
-								image_tmpl="img_{:05d}.t7" if args.modality in ["RGB", "RGBDiff", "RGBDiff2", "RGBDiffplus"] else args.flow_prefix+"{}_{:05d}.t7",
-								random_shift=False,
-								test_mode=True,
+								image_tmpl="img_{:05d}.t7" if args.modality in ["RGB", "RGBDiff", "RGBDiff2",
+																				"RGBDiffplus"] else args.flow_prefix + "{}_{:05d}.t7",
+								random_shift=True,
+								test_mode=False,
 								)
 
 		source_sampler = torch.utils.data.sampler.RandomSampler(source_set)
-		source_loader = torch.utils.data.DataLoader(source_set, batch_size=args.batch_size[0], shuffle=False, sampler=source_sampler, num_workers=args.workers, pin_memory=True)
+		source_loader = torch.utils.data.DataLoader(source_set, batch_size=args.batch_size[0], shuffle=False,
+													sampler=source_sampler, num_workers=args.workers, pin_memory=True)
 
 		target_set = TSNDataSet("", args.train_target_list, num_dataload=num_target_train, num_segments=args.num_segments,
 								new_length=data_length, modality=args.modality,
 								image_tmpl="img_{:05d}.t7" if args.modality in ["RGB", "RGBDiff", "RGBDiff2", "RGBDiffplus"] else args.flow_prefix + "{}_{:05d}.t7",
-								random_shift=False,
-								test_mode=True,
+								random_shift=True,
+								test_mode=False,
 								)
 
 		target_sampler = torch.utils.data.sampler.RandomSampler(target_set)
@@ -226,7 +243,7 @@ def main():
 
 	if args.evaluate:
 		print(Fore.CYAN + 'evaluation only......')
-		prec1 = validate(val_loader, model, criterion, num_class, 0, test_file)
+		prec1 = validate(val_source_loader, model, criterion, num_class, 0, test_file)
 		test_short_file.write('%.3f\n' % prec1)
 		return
 
@@ -266,7 +283,7 @@ def main():
 
 		# evaluate on validation set
 		if epoch % args.eval_freq == 0 or epoch == args.epochs:
-			prec1 = validate(val_loader, model, criterion, num_class, epoch, val_file)
+			prec1 = validate(source_loader, val_loader, model, criterion, num_class, epoch, val_file)
 
 			# remember best prec@1 and save checkpoint
 			is_best = prec1 > best_prec1
@@ -608,7 +625,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 		# 4. edge loss
 		if args.ens_high_order_loss:
-			loss_edge = criterion_edge(source_to_target_edge[-1], high_order_edge_map.detach()) * 10.0
+			loss_edge = criterion_edge(source_to_target_edge, high_order_edge_map) * 10.0
 			losses_edge.update(loss_edge.item(), out_source.size(0))
 			loss += loss_edge
 
@@ -720,7 +737,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 	log_short.write('%s\n' % line)
 	return losses_c.avg, attn_epoch_source.mean(0), attn_epoch_target.mean(0)
 
-def validate(val_loader, model, criterion, num_class, epoch, log):
+def validate(source_val_loader, val_loader, model, criterion, num_class, epoch, log):
 	batch_time = AverageMeter()
 	losses = AverageMeter()
 	top1 = AverageMeter()
@@ -736,7 +753,8 @@ def validate(val_loader, model, criterion, num_class, epoch, log):
 		feat_val_display = None
 		label_val_display = None
 
-	for i, (val_data, val_label) in enumerate(val_loader):
+	val_loader = zip(source_val_loader, val_loader)
+	for i, ((val_source_data, val_source_label), (val_data, val_label)) in enumerate(val_loader):
 
 		val_size_ori = val_data.size()  # original shape
 		batch_val_ori = val_size_ori[0]
@@ -745,20 +763,22 @@ def validate(val_loader, model, criterion, num_class, epoch, log):
 		if batch_val_ori < args.batch_size[2]:
 			val_data_dummy = torch.zeros(args.batch_size[2] - batch_val_ori, val_size_ori[1], val_size_ori[2])
 			val_data = torch.cat((val_data, val_data_dummy))
-
+			val_source_data = torch.cat((val_source_data, val_data_dummy))
 		# add dummy tensors to make sure batch size can be divided by gpu #
 		if val_data.size(0) % gpu_count != 0:
 			val_data_dummy = torch.zeros(gpu_count - val_data.size(0) % gpu_count, val_data.size(1), val_data.size(2))
 			val_data = torch.cat((val_data, val_data_dummy))
-
+			val_source_data = torch.cat((val_source_data, val_data_dummy))
 		val_label = val_label.cuda(non_blocking=True)
+		val_source_label = val_source_label.cuda(non_blocking=True)
+
 		with torch.no_grad():
 
 			if args.baseline_type == 'frame':
 				val_label_frame = val_label.unsqueeze(1).repeat(1, args.num_segments).view(-1) # expand the size for all the frames
 
 			# compute output
-			_, _, _, _, _, attn_val, out_val, out_val_2, pred_domain_val, feat_val, _, _ = model(val_data, val_data, val_label, [0]*len(args.beta), 0, is_train=False, reverse=False)
+			_, _, _, _, _, attn_val, out_val, out_val_2, pred_domain_val, feat_val, _, _ = model(val_source_data, val_data, val_source_label, [0]*len(args.beta), 0, is_train=False, reverse=False)
 
 			# ignore dummy tensors
 			if args.baseline_type == 'video':
@@ -799,7 +819,7 @@ def validate(val_loader, model, criterion, num_class, epoch, log):
 					  'Prec@5 {top5.val:.3f} ({top5.avg:.3f})\t'
 
 				line = line.format(
-					   epoch, i, len(val_loader), batch_time=batch_time, loss=losses,
+					   epoch, i, len(source_val_loader), batch_time=batch_time, loss=losses,
 					   top1=top1, top5=top5)
 
 				if i % args.show_freq == 0:
