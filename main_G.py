@@ -425,35 +425,35 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 		label_target = target_label_frame if args.baseline_type == 'frame' else target_label
 
 		#====== pre-train source data ======#
-		# if args.pretrain_source:
-		# 	#------ forward pass data again ------#
-		# 	_, out_source, out_source_2, _, _, _, _, _, _, _ = model(source_data, target_data, source_label, beta, mu,
-		# 															 is_train=True, reverse=False)
-		#
-		# 	# ignore dummy tensors
-		# 	out_source = out_source[:batch_source_ori]
-		# 	out_source_2 = out_source_2[:batch_source_ori]
-		#
-		# 	#------ calculate the loss function ------#
-		# 	# 1. calculate the classification loss
-		# 	out = out_source
-		# 	label = label_source
-		#
-		# 	loss = criterion(out, label)
-		# 	if args.ens_DA == 'MCD' and args.use_target != 'none':
-		# 		for i in range(args.num_experts):
-		# 			loss += criterion(out_source_2[i], label)
-		#
-		# 	# compute gradient and do SGD step
-		# 	optimizer.zero_grad()
-		# 	loss.backward()
-		#
-		# 	if args.clip_gradient is not None:
-		# 		total_norm = clip_grad_norm_(model.parameters(), args.clip_gradient)
-		# 		if total_norm > args.clip_gradient and args.verbose:
-		# 			print("clipping gradient: {} with coef {}".format(total_norm, args.clip_gradient / total_norm))
-		#
-		# 	optimizer.step()
+		if args.pretrain_source:
+			#------ forward pass data again ------#
+			_, out_source, out_source_2, _, _, _, _, _, _, _ = model(source_data, target_data, source_label, beta, mu,
+																	 is_train=True, reverse=False)
+
+			# ignore dummy tensors
+			out_source = out_source[:batch_source_ori]
+			out_source_2 = out_source_2[:batch_source_ori]
+
+			#------ calculate the loss function ------#
+			# 1. calculate the classification loss
+			out = out_source
+			label = label_source
+
+			loss = criterion(out, label)
+			if args.ens_DA == 'MCD' and args.use_target != 'none':
+				for i in range(args.num_experts):
+					loss += criterion(out_source_2[i], label)
+
+			# compute gradient and do SGD step
+			optimizer.zero_grad()
+			loss.backward()
+
+			if args.clip_gradient is not None:
+				total_norm = clip_grad_norm_(model.parameters(), args.clip_gradient)
+				if args.verbose:
+					print("clipping gradient: {} with coef {}".format(total_norm, args.clip_gradient / total_norm))
+
+			optimizer.step()
 
 
 		#====== forward pass data ======#
@@ -645,7 +645,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 		if args.clip_gradient is not None:
 			total_norm = clip_grad_norm_(model.parameters(), args.clip_gradient)
-			if total_norm > args.clip_gradient and args.verbose:
+			if args.verbose:
 				print("clipping gradient: {} with coef {}".format(total_norm, args.clip_gradient / total_norm))
 
 		optimizer.step()
