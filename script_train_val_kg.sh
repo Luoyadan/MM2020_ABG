@@ -121,7 +121,10 @@ then
 
 	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'/'$dataset'-'$num_segments'seg_'$j'/'
 else
-	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$dataset_val'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'/'
+  if [ "$use_target" == "Sv" ]
+    exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$dataset_val'-'$semi_ratio'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'/'
+  else
+	  exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$dataset_val'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'/'
 fi
 
 echo 'exp_path: '$exp_path
@@ -161,13 +164,18 @@ if ($testing)
 then
 	model=model_best # checkpoint | model_best
 	echo $model
-
+  if [ "$use_target" == "Sv" ]
+  then
+    cf_path='confusion_matrix/Baseline-'$dataset'-'$dataset_target'-'$semi_ratio'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
+  else
+    cf_path='confusion_matrix/Baseline-'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
+  fi
 	# testing on the validation set
 	echo 'testing on the validation set'
 	python test_models.py $class_file $modality \
 	$val_list $exp_path$modality'/'$model'.pth.tar' \
 	--arch $arch --test_segments $test_segments --val_tsne_list $val_tsne_list --tsne False \
-	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion 'confusion_matrix/Baseline-'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg' \
+	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion $cf_path'confusion_matrix/Baseline-'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg' \
 	--n_rnn 1 --rnn_cell $rnn --n_directions 1 --n_ts 5 \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame --use_bn $use_bn --share_params $share_params \
 	-j 4 --bS 128 --top 1 3 5 --add_fc 1 --fc_dim $fc_dim --baseline_type $baseline_type --frame_aggregation $frame_aggregation
