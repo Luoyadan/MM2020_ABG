@@ -16,7 +16,7 @@ fc_dim=512
 arch=resnet101
 use_target=Sv # none | Sv | uSv
 share_params=Y # Y | N
-semi_ratio=0.1
+semi_ratio=0.3
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -82,11 +82,11 @@ beta_0=0.75 # U->H: 0.75 | H->U: 1
 beta_1=0.75 # U->H: 0.75 | H->U: 0.75
 beta_2=0.5 # U->H: 0.5 | H->U: 0.5
 
-use_attn=TransAttn # none | TransAttn | general
+use_attn=none # none | TransAttn | general
 n_attn=1
 use_attn_frame=none # none | TransAttn | general
 
-use_bn=none # none | AdaBN | AutoDIAL
+use_bn=AdaBN # none | AdaBN | AutoDIAL
 add_loss_DA=none # none | target_entropy | attentive_entropy
 gamma=0.003 # U->H: 0.003 | H->U: 0.3
 
@@ -168,9 +168,9 @@ then
 	echo $model
   if [ "$use_target" == "Sv" ]
   then
-    cf_path='confusion_matrix/Baseline-'$dataset'-'$dataset_target'-'$semi_ratio'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
+    cf_path='confusion_matrix/AdaBN-'$dataset'-'$dataset_target'-'$semi_ratio'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
   else
-    cf_path='confusion_matrix/Baseline-'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
+    cf_path='confusion_matrix/AdaBN-'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
   fi
 	# testing on the validation set
 	echo 'testing on the validation set'
