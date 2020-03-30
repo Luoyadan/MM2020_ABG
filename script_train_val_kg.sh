@@ -3,20 +3,20 @@
 #====== parameters ======#
 dataset=gameplay_kinetics # hmdb_ucf | hmdb_ucf_small | ucf_olympic
 class_file='data/classInd_'$dataset'.txt'
-training=true # true | false
-testing=false # true | false
+training=false # true | false
+testing=true # true | false
 modality=RGB
 frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=trn-m  # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
 use_target=Sv # none | Sv | uSv
 share_params=Y # Y | N
-semi_ratio=0.5
+semi_ratio=0.3
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -122,9 +122,11 @@ then
 	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'/'$dataset'-'$num_segments'seg_'$j'/'
 else
   if [ "$use_target" == "Sv" ]
+  then
     exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$dataset_val'-'$semi_ratio'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'/'
   else
 	  exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$dataset_val'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'/'
+fi
 fi
 
 echo 'exp_path: '$exp_path
@@ -174,8 +176,8 @@ then
 	echo 'testing on the validation set'
 	python test_models.py $class_file $modality \
 	$val_list $exp_path$modality'/'$model'.pth.tar' \
-	--arch $arch --test_segments $test_segments --val_tsne_list $val_tsne_list --tsne False \
-	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion $cf_path'confusion_matrix/Baseline-'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg' \
+	--arch $arch --test_segments $test_segments --val_tsne_list $val_tsne_list --tsne True \
+	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion $cf_path \
 	--n_rnn 1 --rnn_cell $rnn --n_directions 1 --n_ts 5 \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame --use_bn $use_bn --share_params $share_params \
 	-j 4 --bS 128 --top 1 3 5 --add_fc 1 --fc_dim $fc_dim --baseline_type $baseline_type --frame_aggregation $frame_aggregation
