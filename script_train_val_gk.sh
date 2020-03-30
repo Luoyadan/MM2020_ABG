@@ -3,20 +3,20 @@
 #====== parameters ======#
 dataset=gameplay_kinetics # hmdb_ucf | hmdb_ucf_small | ucf_olympic
 class_file='data/classInd_'$dataset'.txt'
-training=false # true | false
+training=true # true | false
 testing=true # true | false
 modality=RGB
 frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=trn-m  # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
-use_target=uSv # none | Sv | uSv
+use_target=Sv # none | Sv | uSv
 share_params=Y # Y | N
-
+semi_ratio=0.1
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -33,8 +33,8 @@ then
 	dataset_source=gameplay # depend on users
 	dataset_target=kinetics # depend on users
 	dataset_val=kinetics # depend on users
-	num_source=2625 # number of training data (source)
-	num_target=43378 # number of training data (target)
+	num_source=43378 # number of training data (source)
+	num_target=2625 # number of training data (target)
 
 	path_data_source=$path_data_root$dataset_source'/'
 	path_data_target=$path_data_root$dataset_target'/'
@@ -73,8 +73,8 @@ pretrained=none
 
 #====== parameters for algorithms ======#
 # parameters for DA approaches
-dis_DA=none # none | DAN | JAN
-alpha=0 # depend on users
+dis_DA=JAN # none | DAN | JAN
+alpha=1 # depend on users
 
 adv_pos_0=Y # Y | N (discriminator for relation features)
 adv_DA=RevGrad # none | RevGrad
@@ -82,12 +82,12 @@ beta_0=0.75 # U->H: 0.75 | H->U: 1
 beta_1=0.75 # U->H: 0.75 | H->U: 0.75
 beta_2=0.5 # U->H: 0.5 | H->U: 0.5
 
-use_attn=TransAttn # none | TransAttn | general
+use_attn=none # none | TransAttn | general
 n_attn=1
 use_attn_frame=none # none | TransAttn | general
 
 use_bn=none # none | AdaBN | AutoDIAL
-add_loss_DA=attentive_entropy # none | target_entropy | attentive_entropy
+add_loss_DA=none # none | target_entropy | attentive_entropy
 gamma=0.003 # U->H: 0.003 | H->U: 0.3
 
 ens_DA=none # none | MCD
@@ -95,7 +95,7 @@ mu=0
 
 # parameters for architectures
 bS=128 # batch size
-bS_2=$((bS * num_target / num_source ))
+bS_2=$bS
 echo '('$bS', '$bS_2')'
 
 lr=3e-2
@@ -121,7 +121,12 @@ then
 
 	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'/'$dataset'-'$num_segments'seg_'$j'/'
 else
-	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'/'
+  if [ "$use_target" == "Sv" ]
+  then
+    exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$dataset_val'-'$semi_ratio'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'/'
+  else
+	  exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$dataset_val'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'/'
+fi
 fi
 
 echo 'exp_path: '$exp_path
@@ -145,7 +150,7 @@ then
 	python main.py $dataset $class_file $modality $train_source_list $train_target_list $val_list --exp_path $exp_path \
 	--arch $arch --pretrained $pretrained --baseline_type $baseline_type --frame_aggregation $frame_aggregation \
 	--num_segments $num_segments --val_segments $val_segments --add_fc $add_fc --fc_dim $fc_dim --dropout_i 0.3 --dropout_v 0.3 \
-	--use_target $use_target --share_params $share_params \
+	--use_target $use_target --share_params $share_params --semi_ratio $semi_ratio\
 	--dis_DA $dis_DA --alpha $alpha --place_dis N Y N \
 	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y N \
 	--use_bn $use_bn --add_loss_DA $add_loss_DA --gamma $gamma \
@@ -161,13 +166,18 @@ if ($testing)
 then
 	model=model_best # checkpoint | model_best
 	echo $model
-
+  if [ "$use_target" == "Sv" ]
+  then
+    cf_path='confusion_matrix/JAN-'$dataset'-'$dataset_target'-'$semi_ratio'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
+  else
+    cf_path='confusion_matrix/JAN-'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
+  fi
 	# testing on the validation set
 	echo 'testing on the validation set'
 	python test_models.py $class_file $modality \
 	$val_list $exp_path$modality'/'$model'.pth.tar' \
-	--arch $arch --test_segments $test_segments --val_tsne_list $val_tsne_list --tsne True \
-	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion 'confusion_matrix/Baseline-'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg' \
+	--arch $arch --test_segments $test_segments --val_tsne_list $val_tsne_list --tsne False \
+	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion $cf_path \
 	--n_rnn 1 --rnn_cell $rnn --n_directions 1 --n_ts 5 \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame --use_bn $use_bn --share_params $share_params \
 	-j 4 --bS 128 --top 1 3 5 --add_fc 1 --fc_dim $fc_dim --baseline_type $baseline_type --frame_aggregation $frame_aggregation
