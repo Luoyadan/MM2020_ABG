@@ -3,8 +3,8 @@
 #====== parameters ======#
 dataset=gameplay_kinetics # hmdb_ucf | hmdb_ucf_small | ucf_olympic
 class_file='data/classInd_'$dataset'.txt'
-training=false # true | false
-testing=true # true | false
+training=true # true | false
+testing=false # true | false
 modality=RGB
 frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
@@ -14,9 +14,9 @@ frame_aggregation=avgpool # method to integrate the frame-level features (avgpoo
 add_fc=1
 fc_dim=512
 arch=resnet101
-use_target=uSv # none | Sv | uSv
+use_target=Sv # none | Sv | uSv
 share_params=Y # Y | N
-
+semi_ratio=0.5
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -95,7 +95,7 @@ mu=0
 
 # parameters for architectures
 bS=128 # batch size
-bS_2=$((bS * num_target / num_source ))
+bS_2=$bS
 echo '('$bS', '$bS_2')'
 
 lr=3e-2
@@ -121,7 +121,7 @@ then
 
 	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'/'$dataset'-'$num_segments'seg_'$j'/'
 else
-	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'/'
+	exp_path=$path_exp'-'$optimizer'-share_params_'$share_params'-lr_'$lr'-bS_'$bS'_'$bS_2'/'$dataset'-'$dataset_val'-'$num_segments'seg-disDA_'$dis_DA'-alpha_'$alpha'-advDA_'$adv_DA'-beta_'$beta_0'_'$beta_1'_'$beta_2'-useBN_'$use_bn'-addlossDA_'$add_loss_DA'-gamma_'$gamma'-ensDA_'$ens_DA'-mu_'$mu'-useAttn_'$use_attn'-n_attn_'$n_attn'/'
 fi
 
 echo 'exp_path: '$exp_path
@@ -145,7 +145,7 @@ then
 	python main.py $dataset $class_file $modality $train_source_list $train_target_list $val_list --exp_path $exp_path \
 	--arch $arch --pretrained $pretrained --baseline_type $baseline_type --frame_aggregation $frame_aggregation \
 	--num_segments $num_segments --val_segments $val_segments --add_fc $add_fc --fc_dim $fc_dim --dropout_i 0.3 --dropout_v 0.3 \
-	--use_target $use_target --share_params $share_params \
+	--use_target $use_target --share_params $share_params --semi_ratio $semi_ratio\
 	--dis_DA $dis_DA --alpha $alpha --place_dis N Y N \
 	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y N \
 	--use_bn $use_bn --add_loss_DA $add_loss_DA --gamma $gamma \

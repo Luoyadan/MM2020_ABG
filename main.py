@@ -36,15 +36,15 @@ gpu_count = torch.cuda.device_count()
 
 def main():
 	global args, best_prec1, writer
-	# if path.exists('opts.pkl'):
-	# 	with open('opts.pkl', 'rb') as f:
-	# 		args = pickle.load(f)
-	# else:
-	# 	args = parser.parse_args()
-	# 	with open('opts.pkl', 'wb') as f:
-	# 		pickle.dump(args, f)
+	if path.exists('opts.pkl'):
+		with open('opts.pkl', 'rb') as f:
+			args = pickle.load(f)
+	else:
+		args = parser.parse_args()
+		with open('opts.pkl', 'wb') as f:
+			pickle.dump(args, f)
 
-	args = parser.parse_args()
+	# args = parser.parse_args()
 
 	print(Fore.GREEN + 'Baseline:', args.baseline_type)
 	print(Fore.GREEN + 'Frame aggregation method:', args.frame_aggregation)
@@ -64,12 +64,13 @@ def main():
 		if args.use_bn != 'none':
 			print(Fore.GREEN + 'Apply the adaptive normalization approach:', args.use_bn)
 
+	if args.use_target == 'Sv' and args.semi_ratio is not None:
+		print(Fore.GREEN + 'Semi-supervised Ratio: '+str(args.semi_ratio))
 	# determine the categories
-	if args.dataset != 'gameplay_kinetics':
-		class_names = [line.strip().split(' ', 1)[1] for line in open(args.class_file)]
-		num_class = len(class_names)
-	else:
-		num_class = 30
+
+	class_names = [line.strip().split(' ', 1)[1] for line in open(args.class_file)]
+	num_class = len(class_names)
+
 
 	#=== check the folder existence ===#
 	path_exp = args.exp_path + args.modality + '/'
@@ -209,6 +210,7 @@ def main():
 								image_tmpl="img_{:05d}.t7" if args.modality in ["RGB", "RGBDiff", "RGBDiff2", "RGBDiffplus"] else args.flow_prefix + "{}_{:05d}.t7",
 								random_shift=False,
 								test_mode=True,
+								semi_ratio=args.semi_ratio
 								)
 
 		target_sampler = torch.utils.data.sampler.RandomSampler(target_set)
@@ -480,9 +482,10 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 		out = out_source
 		label = label_source
 
-		if args.use_target == 'Sv':
-			out = torch.cat((out, out_target))
-			label = torch.cat((label, label_target))
+		if args.use_target == 'Sv' and args.semi_ratio is not None:
+			target_index = [index for index in range(label_target.size()[0]) if label_target[index] != 999 ]
+			out = torch.cat((out, out_target[target_index]))
+			label = torch.cat((label, label_target[target_index]))
 
 		loss_classification = criterion(out, label)
 		if args.ens_DA == 'MCD' and args.use_target != 'none':

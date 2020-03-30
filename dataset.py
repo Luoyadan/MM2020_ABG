@@ -8,7 +8,7 @@ import torch
 
 from colorama import init
 from colorama import Fore, Back, Style
-
+import random
 init(autoreset=True)
 
 class VideoRecord(object):
@@ -32,7 +32,8 @@ class TSNDataSet(data.Dataset):
     def __init__(self, root_path, list_file, num_dataload,
                  num_segments=3, new_length=1, modality='RGB',
                  image_tmpl='img_{:05d}.t7', transform=None,
-                 force_grayscale=False, random_shift=True, test_mode=False):
+                 force_grayscale=False, random_shift=True, test_mode=False,
+                 semi_ratio=None):
 
         self.root_path = root_path
         self.list_file = list_file
@@ -44,7 +45,7 @@ class TSNDataSet(data.Dataset):
         self.random_shift = random_shift
         self.test_mode = test_mode
         self.num_dataload = num_dataload
-
+        self.semi_ratio = semi_ratio
         if self.modality == 'RGBDiff' or self.modality == 'RGBDiff2' or self.modality == 'RGBDiffplus':
             self.new_length += 1 # Diff needs one more image to calculate diff
 
@@ -72,6 +73,11 @@ class TSNDataSet(data.Dataset):
         n_repeat = self.num_dataload//len(self.video_list)
         n_left = self.num_dataload%len(self.video_list)
         self.video_list = self.video_list*n_repeat + self.video_list[:n_left]
+        if self.semi_ratio is not None:
+            num_semi_mask = int(self.semi_ratio * len(self.video_list))
+            semi_mask_index = random.sample(range(len(self.video_list)), k=num_semi_mask)
+            for index in semi_mask_index:
+                self.video_list[index]._data[2] = 999
 
     def _sample_indices(self, record):
         """

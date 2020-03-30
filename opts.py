@@ -16,6 +16,7 @@ parser.add_argument('--num_layers', type=int, default=1)
 parser.add_argument('--num_experts', type=int, default=1)
 parser.add_argument('--ens_high_order_loss',  default=False)
 parser.add_argument('--tsne', default=True)
+parser.add_argument('--semi_ratio', type=float, default=None)
 parser.add_argument('--arch', type=str, default="resnet101")
 parser.add_argument('--pretrained', type=str, default="none")
 parser.add_argument('--num_segments', type=int, default=5)
@@ -36,7 +37,7 @@ parser.add_argument('--dropout_v', '--dov', default=0.8, type=float,
                     metavar='DOV', help='dropout ratio for video-level feature (default: 0.5)')
 parser.add_argument('--loss_type', type=str, default="nll",
                     choices=['nll'])
-parser.add_argument('--weighted_class_loss', type=str, default='N', choices=['Y', 'N'])
+parser.add_argument('--weighted_class_loss', type=str, default='Y', choices=['Y', 'N'])
 
 #------ RNN ------
 parser.add_argument('--n_rnn', default=1, type=int, metavar='M',

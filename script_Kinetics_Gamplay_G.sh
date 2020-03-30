@@ -4,13 +4,13 @@
 dataset=gameplay_kinetics # hmdb_ucf | hmdb_ucf_small | ucf_olympic
 class_file='data/classInd_'$dataset'.txt'
 training=true # true | false
-testing=false # true | false
+testing=true # true | false
 modality=RGB
 frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=rnn # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
@@ -169,8 +169,8 @@ then
 	echo 'testing on the validation set'
 	python test_models_G.py $class_file $modality \
 	$val_list $exp_path$modality'/'$model'.pth.tar' \
-	--val_tsne_list $val_tsne_list --tsne True \
-	--arch $arch --test_segments $test_segments --ens_high_order_loss $ens_high_order_loss\
+	--val_tsne_list $val_tsne_list --tsne False \
+	--arch $arch --test_segments $test_segments --high_order $ens_high_order_loss\
 	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion 'confusion_matrix/'$dataset'-'$dataset_target'-'$ens_high_order_loss'-'$frame_aggregation'-'$rnn'-'$test_segments'seg' \
 	--n_rnn 1 --rnn_cell $rnn --n_directions 1 --n_ts 5 \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame --use_bn $use_bn --share_params $share_params \

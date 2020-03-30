@@ -205,7 +205,7 @@ def main():
 							)
 
 	source_sampler = torch.utils.data.sampler.RandomSampler(val_source_set)
-	source_loader = torch.utils.data.DataLoader(val_source_set, batch_size=args.batch_size[0], shuffle=False, sampler=source_sampler, num_workers=args.workers, pin_memory=True)
+	val_source_loader = torch.utils.data.DataLoader(val_source_set, batch_size=args.batch_size[0], shuffle=False, sampler=source_sampler, num_workers=args.workers, pin_memory=True)
 
 
 	if not args.evaluate:
@@ -214,8 +214,8 @@ def main():
 								new_length=data_length, modality=args.modality,
 								image_tmpl="img_{:05d}.t7" if args.modality in ["RGB", "RGBDiff", "RGBDiff2",
 																				"RGBDiffplus"] else args.flow_prefix + "{}_{:05d}.t7",
-								random_shift=True,
-								test_mode=False,
+								random_shift=False,
+								test_mode=True,
 								)
 
 		source_sampler = torch.utils.data.sampler.RandomSampler(source_set)
@@ -225,8 +225,8 @@ def main():
 		target_set = TSNDataSet("", args.train_target_list, num_dataload=num_target_train, num_segments=args.num_segments,
 								new_length=data_length, modality=args.modality,
 								image_tmpl="img_{:05d}.t7" if args.modality in ["RGB", "RGBDiff", "RGBDiff2", "RGBDiffplus"] else args.flow_prefix + "{}_{:05d}.t7",
-								random_shift=True,
-								test_mode=False,
+								random_shift=False,
+								test_mode=True,
 								)
 
 		target_sampler = torch.utils.data.sampler.RandomSampler(target_set)
@@ -353,7 +353,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 	top1 = AverageMeter()
 	top5 = AverageMeter()
 
-	criterion_edge = torch.nn.MSELoss().cuda()
+	criterion_edge = torch.nn.MSELoss(reduction='sum').cuda()
 
 
 	if args.no_partialbn:
@@ -625,7 +625,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 		# 4. edge loss
 		if args.ens_high_order_loss:
-			loss_edge = criterion_edge(source_to_target_edge, high_order_edge_map)
+			loss_edge = criterion_edge(high_order_edge_map, source_to_target_edge.detach())
 			losses_edge.update(loss_edge.item(), out_source.size(0))
 			loss += loss_edge
 
