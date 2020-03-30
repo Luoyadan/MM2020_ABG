@@ -3,7 +3,7 @@
 #====== parameters ======#
 dataset=gameplay_kinetics # hmdb_ucf | hmdb_ucf_small | ucf_olympic
 class_file='data/classInd_'$dataset'.txt'
-training=false # true | false
+training=true # true | false
 testing=true # true | false
 modality=RGB
 frame_type=feature # frame | feature
@@ -16,7 +16,7 @@ fc_dim=512
 arch=resnet101
 use_target=Sv # none | Sv | uSv
 share_params=Y # Y | N
-semi_ratio=0.3
+semi_ratio=0.1
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -87,7 +87,7 @@ n_attn=1
 use_attn_frame=none # none | TransAttn | general
 
 use_bn=none # none | AdaBN | AutoDIAL
-add_loss_DA=attentive_entropy # none | target_entropy | attentive_entropy
+add_loss_DA=none # none | target_entropy | attentive_entropy
 gamma=0.003 # U->H: 0.003 | H->U: 0.3
 
 ens_DA=none # none | MCD
@@ -176,7 +176,7 @@ then
 	echo 'testing on the validation set'
 	python test_models.py $class_file $modality \
 	$val_list $exp_path$modality'/'$model'.pth.tar' \
-	--arch $arch --test_segments $test_segments --val_tsne_list $val_tsne_list --tsne True \
+	--arch $arch --test_segments $test_segments --val_tsne_list $val_tsne_list --tsne False \
 	--save_scores $exp_path$modality'/scores_'$dataset_target'-'$model'-'$test_segments'seg' --save_confusion $cf_path \
 	--n_rnn 1 --rnn_cell $rnn --n_directions 1 --n_ts 5 \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame --use_bn $use_bn --share_params $share_params \

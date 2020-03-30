@@ -484,6 +484,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 		if args.use_target == 'Sv' and args.semi_ratio is not None:
 			target_index = [index for index in range(label_target.size()[0]) if label_target[index] != 999 ]
+			unk_index = [index for index in range(label_target.size()[0]) if label_target[index] == 999 ]
 			out = torch.cat((out, out_target[target_index]))
 			label = torch.cat((label, label_target[target_index]))
 
