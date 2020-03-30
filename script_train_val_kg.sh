@@ -16,7 +16,7 @@ fc_dim=512
 arch=resnet101
 use_target=Sv # none | Sv | uSv
 share_params=Y # Y | N
-semi_ratio=0.3
+semi_ratio=0.7
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
