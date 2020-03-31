@@ -16,7 +16,7 @@ fc_dim=512
 arch=resnet101
 use_target=Sv # none | Sv | uSv
 share_params=Y # Y | N
-semi_ratio=0.1
+semi_ratio=0.7
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -74,7 +74,7 @@ pretrained=none
 #====== parameters for algorithms ======#
 # parameters for DA approaches
 dis_DA=JAN # none | DAN | JAN
-alpha=1 # depend on users
+alpha=0.01 # depend on users
 
 adv_pos_0=Y # Y | N (discriminator for relation features)
 adv_DA=RevGrad # none | RevGrad
