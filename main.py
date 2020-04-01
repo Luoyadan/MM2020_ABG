@@ -198,8 +198,8 @@ def main():
 		source_set = TSNDataSet("", args.train_source_list, num_dataload=num_source_train, num_segments=args.num_segments,
 								new_length=data_length, modality=args.modality,
 								image_tmpl="img_{:05d}.t7" if args.modality in ["RGB", "RGBDiff", "RGBDiff2", "RGBDiffplus"] else args.flow_prefix+"{}_{:05d}.t7",
-								random_shift=False,
-								test_mode=True,
+								random_shift=True,
+								test_mode=False,
 								)
 
 		source_sampler = torch.utils.data.sampler.RandomSampler(source_set)
@@ -208,8 +208,8 @@ def main():
 		target_set = TSNDataSet("", args.train_target_list, num_dataload=num_target_train, num_segments=args.num_segments,
 								new_length=data_length, modality=args.modality,
 								image_tmpl="img_{:05d}.t7" if args.modality in ["RGB", "RGBDiff", "RGBDiff2", "RGBDiffplus"] else args.flow_prefix + "{}_{:05d}.t7",
-								random_shift=False,
-								test_mode=True,
+								random_shift=True,
+								test_mode=False,
 								semi_ratio=args.semi_ratio
 								)
 
