@@ -502,7 +502,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 			label = torch.cat((label, label_target))
 
 		loss_classification = criterion(out, label)
-		loss_classification += 0.50 * criterion(feat_source[-1].view(-1, num_class), source_label_frame)
+		# loss_classification += 0.50 * criterion(feat_source[-1].view(-1, num_class), source_label_frame)
 
 		if args.ens_DA == 'MCD' and args.use_target != 'none':
 			for expert in range(args.num_experts):
@@ -602,7 +602,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 		# 1. entropy loss for target data
 		if args.add_loss_DA == 'target_entropy' and args.use_target != 'none':
 			loss_entropy = cross_entropy_soft(out_target)
-			loss_entropy += 0.5 * cross_entropy_soft(feat_target[-1])
+			# loss_entropy += 0.5 * cross_entropy_soft(feat_target[-1])
 			losses_e.update(loss_entropy.item(), out_target.size(0))
 			loss += gamma * loss_entropy
 

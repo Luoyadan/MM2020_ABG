@@ -14,7 +14,7 @@ frame_aggregation=trn-m  # method to integrate the frame-level features (avgpool
 add_fc=1
 fc_dim=512
 arch=resnet101
-use_target=Sv # none | Sv | uSv
+use_target=none # none | Sv | uSv
 share_params=Y # Y | N
 semi_ratio=0.1
 if [ "$use_target" == "none" ]
@@ -33,8 +33,8 @@ then
 	dataset_source=gameplay # depend on users
 	dataset_target=kinetics # depend on users
 	dataset_val=kinetics # depend on users
-	num_source=43378 # number of training data (source)
-	num_target=2625 # number of training data (target)
+	num_source=2625 # number of training data (source)
+	num_target=43378 # number of training data (target)
 
 	path_data_source=$path_data_root$dataset_source'/'
 	path_data_target=$path_data_root$dataset_target'/'
@@ -78,24 +78,24 @@ alpha=0 # depend on users
 
 adv_pos_0=Y # Y | N (discriminator for relation features)
 adv_DA=RevGrad # none | RevGrad
-beta_0=0.75 # U->H: 0.75 | H->U: 1
+beta_0=1 # U->H: 0.75 | H->U: 1
 beta_1=0.75 # U->H: 0.75 | H->U: 0.75
 beta_2=0.5 # U->H: 0.5 | H->U: 0.5
 
-use_attn=none # none | TransAttn | general
+use_attn=TransAttn  # none | TransAttn | general
 n_attn=1
 use_attn_frame=none # none | TransAttn | general
 
-use_bn=AdaBN # none | AdaBN | AutoDIAL
-add_loss_DA=none # none | target_entropy | attentive_entropy
-gamma=0.003 # U->H: 0.003 | H->U: 0.3
+use_bn=none # none | AdaBN | AutoDIAL
+add_loss_DA=attentive_entropy # none | target_entropy | attentive_entropy
+gamma=0.0005 # U->H: 0.003 | H->U: 0.3
 
 ens_DA=none # none | MCD
 mu=0
 
 # parameters for architectures
-bS=128 # batch size
-bS_2=$bS
+bS_2=128
+bS=$bS_2
 echo '('$bS', '$bS_2')'
 
 lr=3e-2
@@ -168,9 +168,9 @@ then
 	echo $model
   if [ "$use_target" == "Sv" ]
   then
-    cf_path='confusion_matrix/AdaBN-'$dataset'-'$dataset_target'-'$semi_ratio'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
+    cf_path='confusion_matrix/TAN-'$dataset'-'$dataset_target'-'$semi_ratio'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
   else
-    cf_path='confusion_matrix/AdaBN-'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
+    cf_path='confusion_matrix/TAN-'$dataset'-'$dataset_target'-'$frame_aggregation'-'$rnn'-'$test_segments'seg'
   fi
 	# testing on the validation set
 	echo 'testing on the validation set'
