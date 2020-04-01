@@ -486,6 +486,8 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 			target_index = [index for index in range(label_target.size()[0]) if label_target[index] != 999 ]
 			unk_index = [index for index in range(label_target.size()[0]) if label_target[index] == 999 ]
 			out = torch.cat((out, out_target[target_index]))
+			if args.ens_DA == 'MCD' and args.use_target != 'none':
+				out_source_2 = torch.cat((out_source_2, out_target_2[target_index]))
 			label = torch.cat((label, label_target[target_index]))
 
 		loss_classification = criterion(out, label)
