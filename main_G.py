@@ -594,7 +594,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 					loss_adversarial_single = criterion_domain(pred_domain, domain_label)
 
 					loss_adversarial += loss_adversarial_single
-			loss_adversarial = loss_adversarial
+			loss_adversarial = loss_adversarial * 5
 			losses_a.update(loss_adversarial.item(), pred_domain.size(0))
 			loss += loss_adversarial
 

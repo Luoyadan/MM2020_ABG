@@ -10,13 +10,14 @@ frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=rnn # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
 use_target=uSv # none | Sv | uSv
 share_params=Y # Y | N
 ens_high_order_loss=True
+semi_ratio=0.5
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -90,7 +91,7 @@ use_attn_frame=none # none | TransAttn | general
 
 use_bn=AdaBN # none | AdaBN | AutoDIAL
 add_loss_DA=target_entropy # none | target_entropy | attentive_entropy
-gamma=0.3 # U->H: 0.003 | H->U: 0.3
+gamma=0.01 # U->H: 0.003 | H->U: 0.3
 
 ens_DA=none # none | MCD
 mu=0
@@ -148,7 +149,7 @@ then
 	python main_G.py $dataset $class_file $modality $train_source_list $train_target_list $val_list --exp_path $exp_path \
 	--arch $arch --pretrained $pretrained --baseline_type $baseline_type --frame_aggregation $frame_aggregation \
 	--ens_high_order_loss $ens_high_order_loss --num_segments $num_segments --val_segments $val_segments --add_fc $add_fc --fc_dim $fc_dim --dropout_i 0.2 --dropout_v 0.2 \
-	--use_target $use_target --share_params $share_params \
+	--use_target $use_target --share_params $share_params --semi_ratio $semi_ratio \
 	--dis_DA $dis_DA --alpha $alpha --place_dis N Y N \
 	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y N \
 	--use_bn $use_bn --add_loss_DA $add_loss_DA --gamma $gamma \

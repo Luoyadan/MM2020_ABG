@@ -76,7 +76,7 @@ pretrained=none
 dis_DA=none # none | DAN | JAN
 alpha=0 # depend on users
 
-adv_pos_0=Y # Y | N (discriminator for relation features)
+adv_pos_0=N # Y | N (discriminator for relation features)
 adv_DA=RevGrad # none | RevGrad
 beta_0=1 # U->H: 0.75 | H->U: 1
 beta_1=0.75 # U->H: 0.75 | H->U: 0.75
@@ -88,7 +88,7 @@ use_attn_frame=none # none | TransAttn | general
 
 use_bn=AdaBN # none | AdaBN | AutoDIAL
 add_loss_DA=target_entropy # none | target_entropy | attentive_entropy
-gamma=0.03 # U->H: 0.003 | H->U: 0.3
+gamma=0.01 # U->H: 0.003 | H->U: 0.3
 
 ens_DA=none # none | MCD
 mu=0
@@ -139,7 +139,7 @@ then
     	lr_adaptive=dann # none | loss | dann
     	lr_steps_1=10
     	lr_steps_2=20
-    	epochs=30
+    	epochs=40
 	gd=20
 
 	#------ main command ------#
