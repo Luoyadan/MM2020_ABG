@@ -16,7 +16,7 @@ fc_dim=512
 arch=resnet101
 use_target=uSv # none | Sv | uSv
 share_params=Y # Y | N
-ens_high_order_loss=True
+ens_high_order_loss=False
 
 if [ "$use_target" == "none" ]
 then
@@ -76,11 +76,11 @@ pretrained=none
 dis_DA=none # none | DAN | JAN
 alpha=0 # depend on users
 
-adv_pos_0=N # Y | N (discriminator for relation features)
+adv_pos_0=Y # Y | N (discriminator for relation features)
 adv_DA=RevGrad # none | RevGrad
 beta_0=1 # U->H: 0.75 | H->U: 1
-beta_1=1 # U->H: 0.75 | H->U: 0.75
-beta_2=0.35 # U->H: 0.5 | H->U: 0.5
+beta_1=0.75 # U->H: 0.75 | H->U: 0.75
+beta_2=0.5 # U->H: 0.5 | H->U: 0.5
 
 use_attn=none # none | TransAttn | general
 n_attn=0
@@ -88,7 +88,7 @@ use_attn_frame=none # none | TransAttn | general
 
 use_bn=AdaBN # none | AdaBN | AutoDIAL
 add_loss_DA=target_entropy # none | target_entropy | attentive_entropy
-gamma=0.01 # U->H: 0.003 | H->U: 0.3
+gamma=0.03 # U->H: 0.003 | H->U: 0.3
 
 ens_DA=none # none | MCD
 mu=0
@@ -99,7 +99,7 @@ bS_2=128
 #$((bS * num_target / num_source ))
 echo '('$bS', '$bS_2')'
 rnn=LSTM
-lr=2e-2
+lr=3e-2
 optimizer=SGD
 
 if [ "$use_target" == "none" ]
@@ -139,7 +139,7 @@ then
     	lr_adaptive=dann # none | loss | dann
     	lr_steps_1=10
     	lr_steps_2=20
-    	epochs=40
+    	epochs=30
 	gd=20
 
 	#------ main command ------#
@@ -148,13 +148,13 @@ then
 	--ens_high_order_loss $ens_high_order_loss --num_segments $num_segments --val_segments $val_segments --add_fc $add_fc --fc_dim $fc_dim --dropout_i 0.2 --dropout_v 0.2 \
 	--use_target $use_target --share_params $share_params \
 	--dis_DA $dis_DA --alpha $alpha --place_dis N Y N \
-	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y NNN \
+	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y N \
 	--use_bn $use_bn --add_loss_DA $add_loss_DA --gamma $gamma \
 	--ens_DA $ens_DA  --mu $mu \
 	--use_attn $use_attn --n_attn $n_attn --use_attn_frame $use_attn_frame \
 	--gd $gd --lr $lr --lr_decay $lr_decay --lr_adaptive $lr_adaptive --lr_steps $lr_steps_1 $lr_steps_2 --epochs $epochs --optimizer $optimizer \
 	--n_rnn 1 --rnn_cell $rnn --n_directions 1 --n_ts 5 \
-	-b $bS $bS_2 128 -j 4 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
+	-b $bS $bS_2 128 -j 8 -ef 1 -pf 50 -sf 50 --copy_list N N --save_model \
 
 fi
 
