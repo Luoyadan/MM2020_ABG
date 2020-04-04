@@ -594,7 +594,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 					loss_adversarial_single = criterion_domain(pred_domain, domain_label)
 
 					loss_adversarial += loss_adversarial_single
-			loss_adversarial = loss_adversarial * 5
+			loss_adversarial = loss_adversarial * 4
 			losses_a.update(loss_adversarial.item(), pred_domain.size(0))
 			loss += loss_adversarial
 
@@ -625,7 +625,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 
 		# 4. edge loss
 		if args.ens_high_order_loss:
-			loss_edge = criterion_edge(high_order_edge_map, source_to_target_edge.detach())
+			loss_edge = criterion_edge(high_order_edge_map, source_to_target_edge.detach()) * 0
 			losses_edge.update(loss_edge.item(), out_source.size(0))
 			loss += loss_edge
 

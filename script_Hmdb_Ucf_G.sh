@@ -10,7 +10,7 @@ frame_type=feature # frame | feature
 num_segments=5 # sample frame # of each video for training
 test_segments=5
 baseline_type=video
-frame_aggregation=rnn # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
+frame_aggregation=avgpool # method to integrate the frame-level features (avgpool | trn | trn-m | rnn | temconv)
 add_fc=1
 fc_dim=512
 arch=resnet101
@@ -141,7 +141,7 @@ then
     	lr_adaptive=dann # none | loss | dann
     	lr_steps_1=10
     	lr_steps_2=20
-    	epochs=30
+    	epochs=40
 	gd=20
 
 	#------ main command ------#

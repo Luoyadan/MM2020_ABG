@@ -16,7 +16,7 @@ fc_dim=512
 arch=resnet101
 use_target=uSv # none | Sv | uSv
 share_params=Y # Y | N
-ens_high_order_loss=False
+ens_high_order_loss=True
 
 if [ "$use_target" == "none" ]
 then
