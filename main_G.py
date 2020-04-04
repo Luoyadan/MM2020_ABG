@@ -356,7 +356,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 	top1 = AverageMeter()
 	top5 = AverageMeter()
 
-	criterion_edge = torch.nn.MSELoss(reduction='sum').cuda()
+	criterion_edge = torch.nn.BCELoss().cuda()
 
 
 	if args.no_partialbn:
@@ -632,8 +632,26 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 			loss += gamma * loss_entropy
 
 		# 4. edge loss
-		if args.ens_high_order_loss:
-			loss_edge = criterion_edge(high_order_edge_map, source_to_target_edge.detach()) * 0
+		if args.use_target == 'Sv' and args.semi_ratio is not None:
+			src_1, src_2 = torch.chunk(source_label.unsqueeze(1), 2, dim=0)
+			tar_1, tar_2 = torch.chunk(target_label.unsqueeze(1), 2, dim=0)
+			src_1_frame = src_1.repeat(1, model.module.train_segments).view(-1)
+			src_2_frame = src_2.repeat(1, model.module.train_segments).view(-1)
+			tar_1_frame = tar_1.repeat(1, model.module.train_segments).view(-1)
+			tar_2_frame = tar_2.repeat(1, model.module.train_segments).view(-1)
+			gt_1_frame = (src_1_frame.unsqueeze(1)) == (tar_1_frame.unsqueeze(1).t())
+			gt_2_frame = (src_2_frame.unsqueeze(1)) == (tar_2_frame.unsqueeze(1).t())
+			tar_1_frame_index = [index for index in range(tar_1_frame.size()[0]) if tar_1_frame[index] != 999]
+			tar_2_frame_index = [index for index in range(tar_2_frame.size()[0]) if tar_2_frame[index] != 999]
+
+			pre_1, pre_2 = torch.chunk(source_to_target_edge, 2, dim=0)
+			loss_edge = criterion_edge(pre_1[:, tar_1_frame_index], gt_1_frame[:, tar_1_frame_index].float())
+			loss_edge += criterion_edge(pre_2[:, tar_2_frame_index], gt_2_frame[:, tar_2_frame_index].float())
+
+			if args.ens_high_order_loss:
+				source_to_target_video_gt = (source_label.unsqueeze(1)) == (target_label.unsqueeze(1).t())
+				loss_edge += criterion_edge(high_order_edge_map[:, target_index], source_to_target_video_gt[:, target_index])
+
 			losses_edge.update(loss_edge.item(), out_source.size(0))
 			loss += loss_edge
 
@@ -682,7 +700,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 			if args.ens_DA != 'none' and args.use_target != 'none':
 				line += 'mu {mu:.6f}  loss_s {loss_s.avg:.4f}\t'
 
-			if args.ens_high_order_loss:
+			if args.use_target == 'Sv' and args.semi_ratio is not None:
 				line += 'loss_edge {loss_edge.avg:.4f}\t'
 
 			line = line.format(

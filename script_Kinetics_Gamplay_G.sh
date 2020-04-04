@@ -14,9 +14,9 @@ frame_aggregation=avgpool # method to integrate the frame-level features (avgpoo
 add_fc=1
 fc_dim=512
 arch=resnet101
-use_target=uSv # none | Sv | uSv
+use_target=Sv # none | Sv | uSv
 share_params=Y # Y | N
-ens_high_order_loss=True
+ens_high_order_loss=False
 semi_ratio=0.5
 if [ "$use_target" == "none" ]
 then

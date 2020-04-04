@@ -846,8 +846,7 @@ class VideoModel(nn.Module):
         # === GNN layers (frame-level) ===#
         if self.baseline_type == 'frame' or 'video':
             source_to_target_edge, node_source_list, node_target_list = self.GNN_frame(feat_fc_source, feat_fc_target)
-            source_to_target_edge[-1] = nn.AvgPool2d(kernel_size=(num_segments, num_segments))(
-                source_to_target_edge[-1].unsqueeze(0)).squeeze()
+            # print(source_to_target_edge[-1].shape)
             feat_fc_source = node_source_list[-1]
             feat_fc_target = node_target_list[-1]
 
