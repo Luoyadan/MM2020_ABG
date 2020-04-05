@@ -602,7 +602,7 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 					loss_adversarial_single = criterion_domain(pred_domain, domain_label)
 
 					loss_adversarial += loss_adversarial_single
-			loss_adversarial = loss_adversarial * 3
+			loss_adversarial = loss_adversarial * 4
 			losses_a.update(loss_adversarial.item(), pred_domain.size(0))
 			loss += loss_adversarial
 
@@ -649,11 +649,16 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 			loss_edge += criterion_edge(pre_2[:, tar_2_frame_index], gt_2_frame[:, tar_2_frame_index].float())
 
 			if args.ens_high_order_loss:
-				source_to_target_video_gt = (source_label.unsqueeze(1)) == (target_label.unsqueeze(1).t())
-				loss_edge += criterion_edge(high_order_edge_map[:, target_index], source_to_target_video_gt[:, target_index])
+				gt_1_video = (src_1) == (tar_1.t())
+				gt_2_video = (src_2) == (tar_2.t())
+				pre_1_video, pre_2_video = torch.chunk(high_order_edge_map, 2, dim=0)
+				tar_1_video_index = [index for index in range(tar_1.size()[0]) if tar_1[index] != 999]
+				tar_2_video_index = [index for index in range(tar_2.size()[0]) if tar_2[index] != 999]
+				loss_edge += criterion_edge(pre_1_video[:, tar_1_video_index], gt_1_video[:, tar_1_video_index])
+				loss_edge += criterion_edge(pre_2_video[:, tar_2_video_index], gt_2_video[:, tar_2_video_index])
 
-			losses_edge.update(loss_edge.item(), out_source.size(0))
-			loss += loss_edge
+			losses_edge.update(loss_edge.item() * 2.0, out_source.size(0))
+			loss += loss_edge * 2.0
 
 		# measure accuracy and record loss
 		pred = out
