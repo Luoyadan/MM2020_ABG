@@ -17,7 +17,7 @@ arch=resnet101
 use_target=Sv # none | Sv | uSv
 share_params=Y # Y | N
 ens_high_order_loss=False
-semi_ratio = 0.5
+semi_ratio=0.5
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -91,7 +91,7 @@ use_attn_frame=none # none | TransAttn | general
 
 use_bn=AdaBN # none | AdaBN | AutoDIAL
 add_loss_DA=target_entropy # none | target_entropy | attentive_entropy
-gamma=0.03 # U->H: 0.003 | H->U: 0.3
+gamma=0.01 # U->H: 0.003 | H->U: 0.3
 
 ens_DA=none # none | MCD
 mu=0
@@ -147,14 +147,14 @@ then
     	lr_adaptive=dann # none | loss | dann
     	lr_steps_1=10
     	lr_steps_2=20
-    	epochs=30
+    	epochs=50
 	gd=20
 
 	#------ main command ------#
 	python main_G.py $dataset $class_file $modality $train_source_list $train_target_list $val_list --exp_path $exp_path \
 	--arch $arch --pretrained $pretrained --baseline_type $baseline_type --frame_aggregation $frame_aggregation \
 	--ens_high_order_loss $ens_high_order_loss --num_segments $num_segments --val_segments $val_segments --add_fc $add_fc --fc_dim $fc_dim --dropout_i 0.2 --dropout_v 0.2 \
-	--use_target $use_target --share_params $share_params \
+	--use_target $use_target --share_params $share_params --semi_ratio $semi_ratio \
 	--dis_DA $dis_DA --alpha $alpha --place_dis N Y N \
 	--adv_DA $adv_DA --beta $beta_0 $beta_1 $beta_2 --place_adv $adv_pos_0 Y N \
 	--use_bn $use_bn --add_loss_DA $add_loss_DA --gamma $gamma \

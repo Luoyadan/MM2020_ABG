@@ -17,7 +17,7 @@ arch=resnet101
 use_target=Sv # none | Sv | uSv
 share_params=Y # Y | N
 ens_high_order_loss=True
-semi_ratio=0.1
+semi_ratio=0.7
 if [ "$use_target" == "none" ]
 then
 	exp_DA_name=baseline
@@ -91,7 +91,7 @@ use_attn_frame=none # none | TransAttn | general
 
 use_bn=AdaBN # none | AdaBN | AutoDIAL
 add_loss_DA=target_entropy # none | target_entropy | attentive_entropy
-gamma=0.1 # U->H: 0.003 | H->U: 0.3
+gamma=0.5 # U->H: 0.003 | H->U: 0.3
 
 ens_DA=none # none | MCD
 mu=0
@@ -147,7 +147,7 @@ then
     	lr_adaptive=dann # none | loss | dann
     	lr_steps_1=10
     	lr_steps_2=20
-    	epochs=50
+    	epochs=60
 	gd=20
 
 	#------ main command ------#

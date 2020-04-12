@@ -609,9 +609,14 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 		# (III) other loss
 		# 1. entropy loss for target data
 		if args.add_loss_DA == 'target_entropy' and args.use_target != 'none':
-			loss_entropy = cross_entropy_soft(out_target)
+			if args.use_target == 'Sv':
+				loss_entropy = cross_entropy_soft(out_target[unk_index])
+				losses_e.update(loss_entropy.item(), out_target[unk_index].size(0))
+			else:
+				loss_entropy = cross_entropy_soft(out_target)
+				losses_e.update(loss_entropy.item(), out_target.size(0))
 			# loss_entropy += 0.5 * cross_entropy_soft(feat_target[-1])
-			losses_e.update(loss_entropy.item(), out_target.size(0))
+
 			loss += gamma * loss_entropy
 
 		# 2. discrepancy loss for MCD (CVPR 18)
@@ -649,16 +654,18 @@ def train(num_class, source_loader, target_loader, model, criterion, criterion_d
 			loss_edge += criterion_edge(pre_2[:, tar_2_frame_index], gt_2_frame[:, tar_2_frame_index].float())
 
 			if args.ens_high_order_loss:
+				loss_edge = loss_edge * 0.1
 				gt_1_video = (src_1) == (tar_1.t())
 				gt_2_video = (src_2) == (tar_2.t())
 				pre_1_video, pre_2_video = torch.chunk(high_order_edge_map, 2, dim=0)
 				tar_1_video_index = [index for index in range(tar_1.size()[0]) if tar_1[index] != 999]
 				tar_2_video_index = [index for index in range(tar_2.size()[0]) if tar_2[index] != 999]
-				loss_edge += criterion_edge(pre_1_video[:, tar_1_video_index], gt_1_video[:, tar_1_video_index])
-				loss_edge += criterion_edge(pre_2_video[:, tar_2_video_index], gt_2_video[:, tar_2_video_index])
+				loss_edge += criterion_edge(pre_1_video[:, tar_1_video_index], gt_1_video[:, tar_1_video_index].float())
+				loss_edge += criterion_edge(pre_2_video[:, tar_2_video_index], gt_2_video[:, tar_2_video_index].float())
 
-			losses_edge.update(loss_edge.item() * 2.0, out_source.size(0))
-			loss += loss_edge * 2.0
+
+			losses_edge.update(loss_edge.item(), out_source.size(0))
+			loss += loss_edge
 
 		# measure accuracy and record loss
 		pred = out
