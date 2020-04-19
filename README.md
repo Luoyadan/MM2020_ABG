@@ -32,8 +32,10 @@ Pre-extracted features and data lists can be downloaded as,
 The Kinetics-Gameplay dataset is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> for non-commercial purposes only.
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-
----
 ## Usage
 * training/validation: Run `./script_<DATASET_NAME>_G.sh`
 E.g., script_HMDB_Ucf_G.sh
+
+
+
+---
