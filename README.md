@@ -1,12 +1,12 @@
-##Anonymous Submission ID 75 for ACM-MM 2020
+# Anonymous Submission ID 75 for ACM-MM 2020
 
 This is the official PyTorch implementation of our papers:
-##### Adversarial Bipartite Graph Learning for Video Domain Adaptation
+**Adversarial Bipartite Graph Learning for Video Domain Adaptation**
 
-#### Requirements
+## Requirements
 * Python 3.7, PyTorch 1.2, CUDA 10.2
 
-#### Datasets
+## Datasets
 Experiments are conducted on four datasets: UCF-HMDB<sub>small</sub>, UCF-HMDB<sub>full</sub>, UCF-Olympic, Kinetics-Gamplay.
 
 The downloaded files need to store in `./dataset`.
@@ -34,6 +34,6 @@ The Kinetics-Gameplay dataset is licensed under <a rel="license" href="http://cr
 
 
 ---
-#### Usage
+## Usage
 * training/validation: Run `./script_<DATASET_NAME>_G.sh`
 E.g., script_HMDB_Ucf_G.sh
