@@ -9,7 +9,9 @@ This is the official PyTorch implementation of our papers:
 #### Datasets
 Experiments are conducted on four datasets: UCF-HMDB<sub>small</sub>, UCF-HMDB<sub>full</sub>, UCF-Olympic, Kinetics-Gamplay.
 
-Pre-extracted features and data lists are provided as,
+The downloaded files need to store in `./dataset`.
+
+Pre-extracted features and data lists can be downloaded as,
 * Features
   * UCF: [download](https://www.dropbox.com/s/swfdjp7i79uddpf/ucf101-feat.zip?dl=0)
   * HMDB: [download](https://www.dropbox.com/s/c3b3v9zecen4dwo/hmdb51-feat.zip?dl=0)
@@ -29,6 +31,7 @@ Pre-extracted features and data lists are provided as,
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>
 The Kinetics-Gameplay dataset is licensed under <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> for non-commercial purposes only.
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
 
 ---
 #### Usage
