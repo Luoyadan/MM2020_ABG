@@ -1,5 +1,3 @@
-# Anonymous Submission ID 75 for ACM-MM 2020
-
 This is the official PyTorch implementation of our paper:
 **Adversarial Bipartite Graph Learning for Video Domain Adaptation**
 
