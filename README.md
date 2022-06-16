@@ -35,6 +35,31 @@ The Kinetics-Gameplay dataset is licensed under <a rel="license" href="http://cr
 * training/validation: Run `./script_<DATASET_NAME>_G.sh`
 E.g., script_HMDB_Ucf_G.sh
 
-
+## Citation
+If you find this repository useful, please cite our papers:
+```
+@inproceedings{DBLP:conf/mm/LuoHW0B20,
+  author    = {Yadan Luo and
+               Zi Huang and
+               Zijian Wang and
+               Zheng Zhang and
+               Mahsa Baktashmotlagh},
+  editor    = {Chang Wen Chen and
+               Rita Cucchiara and
+               Xian{-}Sheng Hua and
+               Guo{-}Jun Qi and
+               Elisa Ricci and
+               Zhengyou Zhang and
+               Roger Zimmermann},
+  title     = {Adversarial Bipartite Graph Learning for Video Domain Adaptation},
+  booktitle = {{MM} '20: The 28th {ACM} International Conference on Multimedia, Virtual
+               Event / Seattle, WA, USA, October 12-16, 2020},
+  pages     = {19--27},
+  publisher = {{ACM}},
+  year      = {2020},
+  url       = {https://doi.org/10.1145/3394171.3413897},
+  doi       = {10.1145/3394171.3413897}
+}
+```
 
 ---
